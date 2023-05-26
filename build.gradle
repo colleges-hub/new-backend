@@ -1,8 +1,7 @@
 plugins {
 	id 'java'
-	id 'org.springframework.boot' version '3.1.0'
+	id 'org.springframework.boot' version '2.5.2'
 	id 'io.spring.dependency-management' version '1.1.0'
-	id 'com.vaadin' version '24.0.5'
 }
 
 group = 'ru.ncti'
@@ -20,15 +19,16 @@ repositories {
 }
 
 ext {
-	set('vaadinVersion', "24.0.5")
 }
 
 dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-amqp'
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 	implementation 'org.springframework.boot:spring-boot-starter-web'
+	implementation "org.springframework.boot:spring-boot-starter-security"
 	implementation 'org.springframework.boot:spring-boot-starter-websocket'
-	implementation 'com.vaadin:vaadin-spring-boot-starter'
+	implementation 'io.jsonwebtoken:jjwt:0.9.1'
+	implementation 'log4j:log4j:1.2.17'
 	implementation 'org.flywaydb:flyway-core'
 	compileOnly 'org.projectlombok:lombok'
 	runtimeOnly 'org.postgresql:postgresql'
@@ -38,9 +38,6 @@ dependencies {
 }
 
 dependencyManagement {
-	imports {
-		mavenBom "com.vaadin:vaadin-bom:${vaadinVersion}"
-	}
 }
 
 tasks.named('test') {
