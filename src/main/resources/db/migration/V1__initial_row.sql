@@ -15,7 +15,7 @@ create table users
 
 insert into users (firstname, lastname, surname, email, password, is_account_non_expired, is_account_non_locked,
                    is_credentials_non_expired, is_enabled)
-values ('Админ', 'Админочив', 'Администрейтович', 'admin@gmail.com',
+values ('Админ', 'Админович', 'Администрейтович', 'admin@gmail.com',
         '$2a$10$xjDYCTaxIzZcr5jap1AU1Oe2VzwjasEH5ISvIBuL9QgYXb3W.Tmai', true, true, true, true);
 
 create table role

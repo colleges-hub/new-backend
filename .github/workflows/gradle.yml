@@ -22,7 +22,7 @@ jobs:
 
     services:
       postgres:
-        image: postgres:13
+        image: postgres:15.2
         env:
           POSTGRES_USER: dbuser
           POSTGRES_PASSWORD: dbpass
