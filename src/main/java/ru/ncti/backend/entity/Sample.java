@@ -24,10 +24,10 @@ import javax.persistence.Table;
 @Getter
 @Setter
 @Entity
-@Table(name = "shablon")
 @Builder
-@AllArgsConstructor
 @NoArgsConstructor
+@AllArgsConstructor
+@Table(name = "shablon")
 public class Sample {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

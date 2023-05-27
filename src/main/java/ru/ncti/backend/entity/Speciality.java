@@ -17,7 +17,7 @@ import javax.persistence.Table;
 @Getter
 @Setter
 @Entity
-@Table(name = "speciality")
+@Table(name = "specialitys")
 public class Speciality {
     @Id
     @Column(name = "id_spec")

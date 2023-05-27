@@ -4,6 +4,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import ru.ncti.backend.entity.Group;
 import ru.ncti.backend.entity.Sample;
+import ru.ncti.backend.entity.User;
 
 import java.util.List;
 
@@ -14,5 +15,7 @@ import java.util.List;
  */
 @Repository
 public interface SampleRepository extends JpaRepository<Sample, Long> {
+    List<Sample> findAllByTeacher(User user);
+
     List<Sample> findAllByGroup(Group group);
 }

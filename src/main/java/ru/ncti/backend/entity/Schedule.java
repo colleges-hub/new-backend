@@ -27,10 +27,10 @@ import java.util.Date;
 @Getter
 @Setter
 @Entity
-@Table(name = "raspisanie")
+@ToString
 @NoArgsConstructor
 @AllArgsConstructor
-@ToString
+@Table(name = "raspisanie")
 public class Schedule {
 
     @Id
