@@ -33,6 +33,7 @@ dependencies {
     implementation 'com.opencsv:opencsv:5.7.1'
     implementation 'log4j:log4j:1.2.17'
     implementation 'org.flywaydb:flyway-core:9.17.0'
+    implementation 'org.testng:testng:7.1.0'
     compileOnly 'org.projectlombok:lombok'
     runtimeOnly 'org.postgresql:postgresql:42.5.4'
     annotationProcessor 'org.projectlombok:lombok'
