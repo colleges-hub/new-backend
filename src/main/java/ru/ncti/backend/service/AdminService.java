@@ -265,7 +265,7 @@ public class AdminService {
 
     public List<User> getTeachers() {
         Role role = roleRepository.findByName("ROLE_TEACHER").orElse(null);
-        return userRepository.findByRoles(role);
+        return userRepository.findAllByRoles(role);
     }
 
     public List<Group> getGroups() {

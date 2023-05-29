@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import ru.ncti.backend.dto.AddUserDTO;
 import ru.ncti.backend.dto.ChatDTO;
 import ru.ncti.backend.dto.ChatViewDTO;
 import ru.ncti.backend.dto.MessageDTO;
@@ -40,6 +41,11 @@ public class ChatController {
     @GetMapping()
     public ResponseEntity<List<ChatViewDTO>> getChatsFromUser() {
         return ResponseEntity.status(HttpStatus.OK).body(chatService.getChatsFromUser());
+    }
+
+    @PostMapping("/{chatId}")
+    public ResponseEntity<String> addUsersToChat(@PathVariable("chatId") UUID id, @RequestBody AddUserDTO dto) {
+        return ResponseEntity.status(HttpStatus.OK).body(chatService.addUsersToChats(id, dto));
     }
 
     @PostMapping("/create")

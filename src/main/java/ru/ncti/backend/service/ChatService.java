@@ -6,6 +6,7 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.ncti.backend.dto.AddUserDTO;
 import ru.ncti.backend.dto.ChatDTO;
 import ru.ncti.backend.dto.ChatViewDTO;
 import ru.ncti.backend.dto.MessageDTO;
@@ -71,6 +72,18 @@ public class ChatService {
                 .build()));
 
         return dtos;
+    }
+
+    @Transactional(readOnly = false)
+    public String addUsersToChats(UUID chatId, AddUserDTO dto) {
+        Chat chat = chatRepository.findById(chatId)
+                .orElseThrow(() -> new IllegalArgumentException("Chat not found"));
+
+        dto.getIds().forEach(id -> chat.getUsers()
+                .add(userRepository.findById(id)
+                        .orElseThrow(() -> new IllegalArgumentException("User not found"))));
+
+        return "Users was added";
     }
 
     @Transactional(readOnly = false)
