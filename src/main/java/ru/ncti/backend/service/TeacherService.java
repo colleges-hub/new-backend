@@ -5,6 +5,7 @@ import lombok.extern.log4j.Log4j;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import ru.ncti.backend.dto.StudentViewDTO;
+import ru.ncti.backend.dto.TeacherScheduleViewDTO;
 import ru.ncti.backend.dto.TeacherViewDTO;
 import ru.ncti.backend.entity.Sample;
 import ru.ncti.backend.entity.User;
@@ -48,19 +49,19 @@ public class TeacherService {
                 .build();
     }
 
-    public Map<String, Set<StudentViewDTO.TeacherScheduleViewDTO>> getSchedule() {
+    public Map<String, Set<TeacherScheduleViewDTO>> getSchedule() {
         var auth = SecurityContextHolder.getContext().getAuthentication();
         User teacher = (User) auth.getPrincipal();
         return makeSchedule(sampleRepository.findAllByTeacher(teacher));
     }
 
-    private Map<String, Set<StudentViewDTO.TeacherScheduleViewDTO>> makeSchedule(List<Sample> list) {
-        Map<String, Set<StudentViewDTO.TeacherScheduleViewDTO>> map = new HashMap<>();
+    private Map<String, Set<TeacherScheduleViewDTO>> makeSchedule(List<Sample> list) {
+        Map<String, Set<TeacherScheduleViewDTO>> map = new HashMap<>();
 
         for (Sample s : getTypeSchedule(list)) {
             log.info(s.getSubject().getName());
             String key = s.getDay();
-            StudentViewDTO.TeacherScheduleViewDTO dto = StudentViewDTO.TeacherScheduleViewDTO.builder()
+            TeacherScheduleViewDTO dto = TeacherScheduleViewDTO.builder()
                     .classroom(s.getClassroom())
                     .groups(List.of(s.getGroup().getName()))
                     .numberPair(s.getNumberPair())
@@ -68,7 +69,7 @@ public class TeacherService {
                     .build();
 
             // Проверяем наличие предмета с таким же номером пары и названием предмета
-            Optional<StudentViewDTO.TeacherScheduleViewDTO> found = map.getOrDefault(key, Collections.emptySet())
+            Optional<TeacherScheduleViewDTO> found = map.getOrDefault(key, Collections.emptySet())
                     .stream()
                     .filter(scheduleDTO ->
                             scheduleDTO.getNumberPair().equals(dto.getNumberPair()) &&
@@ -79,7 +80,7 @@ public class TeacherService {
 
             // Если предмет найден, объединяем группы
             if (found.isPresent()) {
-                StudentViewDTO.TeacherScheduleViewDTO existing = found.get();
+                TeacherScheduleViewDTO existing = found.get();
                 Set<String> groups = new HashSet<>(existing.getGroups());
                 groups.addAll(dto.getGroups());
                 existing.setGroups(new ArrayList<>(groups));
@@ -91,10 +92,10 @@ public class TeacherService {
         return map;
     }
 
-    private void sortedMap(Map<String, Set<StudentViewDTO.TeacherScheduleViewDTO>> map) {
+    private void sortedMap(Map<String, Set<TeacherScheduleViewDTO>> map) {
         map.forEach((key, value) -> {
-            Set<StudentViewDTO.TeacherScheduleViewDTO> sortedSet = value.stream()
-                    .sorted(Comparator.comparingInt(StudentViewDTO.TeacherScheduleViewDTO::getNumberPair))
+            Set<TeacherScheduleViewDTO> sortedSet = value.stream()
+                    .sorted(Comparator.comparingInt(TeacherScheduleViewDTO::getNumberPair))
                     .collect(Collectors.toCollection(LinkedHashSet::new));
             map.put(key, sortedSet);
         });

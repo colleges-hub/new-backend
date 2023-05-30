@@ -26,14 +26,4 @@ public class StudentViewDTO {
     private String group;
     private String speciality;
     private Integer course;
-
-    @Getter
-    @Setter
-    @Builder
-    public static class TeacherScheduleViewDTO {
-        private Integer numberPair;
-        private String subject;
-        private String classroom;
-        private List<String> groups;
-    }
 }
