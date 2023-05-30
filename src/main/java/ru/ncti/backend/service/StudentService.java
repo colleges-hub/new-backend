@@ -18,6 +18,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.TextStyle;
 import java.time.temporal.WeekFields;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -70,27 +71,24 @@ public class StudentService {
         List<Schedule> sch = scheduleRepository.findLatestScheduleForGroup(student.getGroup().getId());
 
         if (!sch.isEmpty()) {
-            for (int i = 0; i < sch.size(); i++) {
-                String dayInWeek = LocalDate
-                        .parse(sch.get(0).getDate().toString(), DateTimeFormatter.ISO_DATE)
-                        .getDayOfWeek()
+            for (Schedule schedule : sch) {
+                String date = LocalDate.parse(schedule.getDate().toString(), DateTimeFormatter.ISO_DATE).getDayOfWeek()
                         .getDisplayName(TextStyle.FULL, new Locale("ru"));
-                String capitalizedDay = dayInWeek.substring(0, 1).toUpperCase() + dayInWeek.substring(1);
+                String capitalizedDay = date.substring(0, 1).toUpperCase() + date.substring(1);
 
                 Set<ScheduleDTO> set = map.get(capitalizedDay);
                 if (set != null) {
                     ScheduleDTO newScheduleDTO = ScheduleDTO.builder()
                             .day(capitalizedDay)
-                            .numberPair(sch.get(i).getNumberPair())
-                            .subject(sch.get(i).getSubject().getName())
-                            .teacher(
+                            .numberPair(schedule.getNumberPair())
+                            .teachers(List.of(
                                     new TeacherScheduleDTO(
-                                            sch.get(i).getTeacher().getFirstname(),
-                                            sch.get(i).getTeacher().getLastname(),
-                                            sch.get(i).getTeacher().getSurname()
+                                            schedule.getTeacher().getFirstname(),
+                                            schedule.getTeacher().getLastname(),
+                                            schedule.getTeacher().getSurname()
                                     )
-                            )
-                            .classroom(sch.get(i).getClassroom())
+                            ))
+                            .classroom(schedule.getClassroom())
                             .build();
                     set.removeIf(s -> Objects.equals(s.getNumberPair(), newScheduleDTO.getNumberPair()));
                     set.add(newScheduleDTO);
@@ -113,9 +111,39 @@ public class StudentService {
         String currentWeekType = getCurrentWeekType();
         Set<ScheduleDTO> set = new HashSet<>();
 
+        Map<String, List<TeacherScheduleDTO>> mergedTeachersMap = new HashMap<>();
+
         sample.stream()
                 .filter(s -> s.getParity().equals("0") || s.getParity().equals(currentWeekType))
-                .forEach(s -> set.add(convert(s)));
+                .forEach(s -> {
+                    ScheduleDTO dto = convert(s);
+                    String key = dto.getDay() + "-" + dto.getNumberPair() + "-" + dto.getClassroom() + "-" + dto.getSubject();
+                    List<TeacherScheduleDTO> mergedTeachers = mergedTeachersMap.get(key);
+                    if (mergedTeachers != null) {
+                        mergedTeachers.addAll(dto.getTeachers());
+                    } else {
+                        mergedTeachers = new ArrayList<>(dto.getTeachers());
+                        mergedTeachersMap.put(key, mergedTeachers);
+                    }
+                });
+
+        mergedTeachersMap.forEach((key, mergedTeachers) -> {
+            String[] parts = key.split("-");
+            String day = parts[0];
+            int numberPair = Integer.parseInt(parts[1]);
+            String classroom = parts[2];
+            String subject = parts[3];
+
+            ScheduleDTO mergedDto = ScheduleDTO.builder()
+                    .day(day)
+                    .numberPair(numberPair)
+                    .subject(subject)
+                    .teachers(mergedTeachers)
+                    .classroom(classroom)
+                    .build();
+
+            set.add(mergedDto);
+        });
 
         return set;
     }
@@ -131,11 +159,11 @@ public class StudentService {
                 .day(sample.getDay())
                 .numberPair(sample.getNumberPair())
                 .subject(sample.getSubject().getName())
-                .teacher(new TeacherScheduleDTO(
+                .teachers(List.of(new TeacherScheduleDTO(
                         sample.getTeacher().getFirstname(),
                         sample.getTeacher().getLastname(),
                         sample.getTeacher().getSurname()
-                ))
+                )))
                 .classroom(sample.getClassroom())
                 .build();
     }

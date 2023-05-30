@@ -6,6 +6,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.List;
+
 /**
  * Created by IntelliJ IDEA.
  * User: Ivan Chuvilin (@ichuvilin)
@@ -20,6 +22,6 @@ public class ScheduleDTO {
     private String day;
     private Integer numberPair;
     private String subject;
-    private TeacherScheduleDTO teacher;
+    private List<TeacherScheduleDTO> teachers;
     private String classroom;
 }

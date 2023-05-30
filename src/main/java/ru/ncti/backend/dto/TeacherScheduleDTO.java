@@ -3,6 +3,7 @@ package ru.ncti.backend.dto;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 
 /**
  * Created by IntelliJ IDEA.
@@ -11,6 +12,7 @@ import lombok.Setter;
  */
 @Getter
 @Setter
+@ToString
 @AllArgsConstructor
 public class TeacherScheduleDTO {
     private String firstname;

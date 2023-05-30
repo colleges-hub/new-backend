@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import ru.ncti.backend.dto.GroupDTO;
 import ru.ncti.backend.dto.SampleDTO;
+import ru.ncti.backend.dto.ScheduleDTO;
 import ru.ncti.backend.dto.SpecialityDTO;
 import ru.ncti.backend.dto.StudentDTO;
 import ru.ncti.backend.dto.SubjectDTO;
@@ -39,7 +40,7 @@ import java.util.List;
 public class AdminController {
 
     private final AdminService adminService;
-    
+
     @GetMapping("/profile")
     public ResponseEntity<UserDTO> getProfile() {
         return ResponseEntity.status(HttpStatus.OK).body(adminService.getProfile());
@@ -109,6 +110,11 @@ public class AdminController {
         } catch (IOException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
+    }
+
+    @PostMapping("/change-schedule")
+    public ResponseEntity<?> changeSchedule(@RequestBody ScheduleDTO dto) {
+        return ResponseEntity.status(HttpStatus.OK).body(adminService.changeSchedule(dto));
     }
 
     @GetMapping("/students")

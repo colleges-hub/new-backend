@@ -14,6 +14,7 @@ import org.springframework.web.multipart.MultipartFile;
 import ru.ncti.backend.dto.GroupDTO;
 import ru.ncti.backend.dto.SampleDTO;
 import ru.ncti.backend.dto.SampleUploadDTO;
+import ru.ncti.backend.dto.ScheduleDTO;
 import ru.ncti.backend.dto.SpecialityDTO;
 import ru.ncti.backend.dto.StudentDTO;
 import ru.ncti.backend.dto.SubjectDTO;
@@ -305,6 +306,10 @@ public class AdminService {
 
         userRepository.delete(student);
         return "User successfully deleted";
+    }
+
+    public String changeSchedule(ScheduleDTO dto) {
+        return null;
     }
 
     public String deleteGroupById(Long id) {

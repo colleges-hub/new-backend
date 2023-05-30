@@ -55,7 +55,6 @@ public class ChatController {
 
     @GetMapping("/{chatId}")
     public ResponseEntity<List<MessageFromChatDTO>> getChatMessages(@PathVariable("chatId") UUID id) {
-        // Извлечение всех сообщений из базы данных
         return ResponseEntity.status(HttpStatus.OK).body(chatService.getMessageFromChat(id));
     }
 

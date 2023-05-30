@@ -4,18 +4,26 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
-import ru.ncti.backend.dto.StudentViewDTO;
+import org.springframework.transaction.annotation.Transactional;
+import ru.ncti.backend.dto.ScheduleChangeDTO;
 import ru.ncti.backend.dto.TeacherScheduleViewDTO;
 import ru.ncti.backend.dto.TeacherViewDTO;
+import ru.ncti.backend.entity.Group;
 import ru.ncti.backend.entity.Sample;
+import ru.ncti.backend.entity.Schedule;
+import ru.ncti.backend.entity.Subject;
 import ru.ncti.backend.entity.User;
+import ru.ncti.backend.repository.GroupRepository;
 import ru.ncti.backend.repository.SampleRepository;
+import ru.ncti.backend.repository.ScheduleRepository;
+import ru.ncti.backend.repository.SubjectRepository;
 
 import java.time.LocalDate;
 import java.time.temporal.WeekFields;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -37,6 +45,9 @@ import java.util.stream.Collectors;
 public class TeacherService {
 
     private final SampleRepository sampleRepository;
+    private final GroupRepository groupRepository;
+    private final SubjectRepository subjectRepository;
+    private final ScheduleRepository scheduleRepository;
 
     public TeacherViewDTO getProfile() {
         var auth = SecurityContextHolder.getContext().getAuthentication();
@@ -59,7 +70,6 @@ public class TeacherService {
         Map<String, Set<TeacherScheduleViewDTO>> map = new HashMap<>();
 
         for (Sample s : getTypeSchedule(list)) {
-            log.info(s.getSubject().getName());
             String key = s.getDay();
             TeacherScheduleViewDTO dto = TeacherScheduleViewDTO.builder()
                     .classroom(s.getClassroom())
@@ -92,6 +102,36 @@ public class TeacherService {
         return map;
     }
 
+    @Transactional(readOnly = false)
+    public String changeSchedule(ScheduleChangeDTO dto) {
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        User teacher = (User) auth.getPrincipal();
+        List<Group> groups = new ArrayList<>();
+        for (String gr : dto.getGroup()) {
+            Group group = groupRepository.findByName(gr)
+                    .orElseThrow(() -> new IllegalArgumentException("Group not found"));
+            groups.add(group);
+        }
+
+        Subject subject = subjectRepository.findByName(dto.getSubject())
+                .orElseThrow(() -> new IllegalArgumentException("Subject not found"));
+
+        for (Group group : groups) {
+            Schedule schedule = Schedule.builder()
+                    .date(new Date())
+                    .group(group)
+                    .teacher(teacher)
+                    .numberPair(dto.getNumberPair())
+                    .subject(subject)
+                    .classroom(dto.getClassroom())
+                    .build();
+            scheduleRepository.save(schedule);
+        }
+
+        return "Changes was added";
+    }
+
+
     private void sortedMap(Map<String, Set<TeacherScheduleViewDTO>> map) {
         map.forEach((key, value) -> {
             Set<TeacherScheduleViewDTO> sortedSet = value.stream()
@@ -113,5 +153,4 @@ public class TeacherService {
         int currentWeekNumber = currentDate.get(WeekFields.of(Locale.getDefault()).weekOfWeekBasedYear());
         return currentWeekNumber % 2 == 0 ? "2" : "1";
     }
-
 }

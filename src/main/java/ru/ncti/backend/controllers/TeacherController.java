@@ -4,8 +4,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import ru.ncti.backend.dto.ScheduleChangeDTO;
 import ru.ncti.backend.dto.TeacherScheduleViewDTO;
 import ru.ncti.backend.dto.TeacherViewDTO;
 import ru.ncti.backend.service.TeacherService;
@@ -34,4 +37,10 @@ public class TeacherController {
     public ResponseEntity<Map<String, Set<TeacherScheduleViewDTO>>> getSchedule() {
         return ResponseEntity.status(HttpStatus.OK).body(teacherService.getSchedule());
     }
+
+    @PostMapping("/change-schedule")
+    public ResponseEntity<String> changeSchedule(@RequestBody ScheduleChangeDTO dto) {
+        return ResponseEntity.status(HttpStatus.OK).body(teacherService.changeSchedule(dto));
+    }
+
 }

@@ -93,7 +93,7 @@ public class UserService {
         List<Schedule> sch = scheduleRepository.findLatestScheduleForGroup(group.getId());
 
         if (!sch.isEmpty()) {
-            for (int i = 0; i < sch.size(); i++) {
+            for (Schedule schedule : sch) {
                 String dayInWeek = LocalDate
                         .parse(sch.get(0).getDate().toString(), DateTimeFormatter.ISO_DATE)
                         .getDayOfWeek()
@@ -104,16 +104,16 @@ public class UserService {
                 if (set != null) {
                     ScheduleDTO newScheduleDTO = ScheduleDTO.builder()
                             .day(capitalizedDay)
-                            .numberPair(sch.get(i).getNumberPair())
-                            .subject(sch.get(i).getSubject().getName())
-                            .teacher(
+                            .numberPair(schedule.getNumberPair())
+                            .subject(schedule.getSubject().getName())
+                            .teachers(List.of(
                                     new TeacherScheduleDTO(
-                                            sch.get(i).getTeacher().getFirstname(),
-                                            sch.get(i).getTeacher().getLastname(),
-                                            sch.get(i).getTeacher().getSurname()
+                                            schedule.getTeacher().getFirstname(),
+                                            schedule.getTeacher().getLastname(),
+                                            schedule.getTeacher().getSurname()
                                     )
-                            )
-                            .classroom(sch.get(i).getClassroom())
+                            ))
+                            .classroom(schedule.getClassroom())
                             .build();
                     set.removeIf(s -> Objects.equals(s.getNumberPair(), newScheduleDTO.getNumberPair()));
                     set.add(newScheduleDTO);
@@ -197,9 +197,39 @@ public class UserService {
         String currentWeekType = getCurrentWeekType();
         Set<ScheduleDTO> set = new HashSet<>();
 
+        Map<String, List<TeacherScheduleDTO>> mergedTeachersMap = new HashMap<>();
+
         sample.stream()
                 .filter(s -> s.getParity().equals("0") || s.getParity().equals(currentWeekType))
-                .forEach(s -> set.add(convert(s)));
+                .forEach(s -> {
+                    ScheduleDTO dto = convert(s);
+                    String key = dto.getDay() + "-" + dto.getNumberPair() + "-" + dto.getClassroom() + "-" + dto.getSubject();
+                    List<TeacherScheduleDTO> mergedTeachers = mergedTeachersMap.get(key);
+                    if (mergedTeachers != null) {
+                        mergedTeachers.addAll(dto.getTeachers());
+                    } else {
+                        mergedTeachers = new ArrayList<>(dto.getTeachers());
+                        mergedTeachersMap.put(key, mergedTeachers);
+                    }
+                });
+
+        mergedTeachersMap.forEach((key, mergedTeachers) -> {
+            String[] parts = key.split("-");
+            String day = parts[0];
+            int numberPair = Integer.parseInt(parts[1]);
+            String classroom = parts[2];
+            String subject = parts[3];
+
+            ScheduleDTO mergedDto = ScheduleDTO.builder()
+                    .day(day)
+                    .numberPair(numberPair)
+                    .subject(subject)
+                    .teachers(mergedTeachers)
+                    .classroom(classroom)
+                    .build();
+
+            set.add(mergedDto);
+        });
 
         return set;
     }
@@ -215,11 +245,11 @@ public class UserService {
                 .day(sample.getDay())
                 .numberPair(sample.getNumberPair())
                 .subject(sample.getSubject().getName())
-                .teacher(new TeacherScheduleDTO(
+                .teachers(List.of(new TeacherScheduleDTO(
                         sample.getTeacher().getFirstname(),
                         sample.getTeacher().getLastname(),
                         sample.getTeacher().getSurname()
-                ))
+                )))
                 .classroom(sample.getClassroom())
                 .build();
     }
