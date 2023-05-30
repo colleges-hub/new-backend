@@ -81,6 +81,7 @@ public class StudentService {
                     ScheduleDTO newScheduleDTO = ScheduleDTO.builder()
                             .day(capitalizedDay)
                             .numberPair(schedule.getNumberPair())
+                            .subject(schedule.getSubject().getName())
                             .teachers(List.of(
                                     new TeacherScheduleDTO(
                                             schedule.getTeacher().getFirstname(),
