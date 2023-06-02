@@ -1,6 +1,6 @@
 plugins {
     id 'java'
-    id 'org.springframework.boot' version '2.5.2'
+    id 'org.springframework.boot' version '2.7.11'
     id 'io.spring.dependency-management' version '1.1.0'
 }
 
@@ -27,6 +27,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation "org.springframework.boot:spring-boot-starter-security"
     implementation 'org.springframework.boot:spring-boot-starter-websocket'
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
     implementation 'io.jsonwebtoken:jjwt:0.9.1'
     implementation 'org.modelmapper:modelmapper:3.1.1'
     implementation 'commons-fileupload:commons-fileupload:1.5'
