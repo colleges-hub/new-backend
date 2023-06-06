@@ -21,8 +21,12 @@ public class RabbitConfig {
     }
 
     @Bean
-    public Queue certificateQueue() {
+    public Queue emailQueue() {
         return new Queue(RabbitQueue.EMAIL_UPDATE);
     }
 
+    @Bean
+    public Queue notificationQueue() {
+        return new Queue(RabbitQueue.CHAT_NOTIFICATION);
+    }
 }

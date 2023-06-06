@@ -12,11 +12,13 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import ru.ncti.backend.dto.GroupDTO;
+import ru.ncti.backend.dto.GroupViewDTO;
 import ru.ncti.backend.dto.SampleDTO;
 import ru.ncti.backend.dto.SampleUploadDTO;
 import ru.ncti.backend.dto.ScheduleDTO;
 import ru.ncti.backend.dto.SpecialityDTO;
 import ru.ncti.backend.dto.StudentDTO;
+import ru.ncti.backend.dto.SubjectAdminDTO;
 import ru.ncti.backend.dto.SubjectDTO;
 import ru.ncti.backend.dto.UserDTO;
 import ru.ncti.backend.entity.Group;
@@ -37,6 +39,7 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.temporal.WeekFields;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
@@ -269,8 +272,15 @@ public class AdminService {
         return userRepository.findAllByRoles(role);
     }
 
-    public List<Group> getGroups() {
-        return groupRepository.findAll();
+    public List<GroupViewDTO> getGroups() {
+        List<GroupViewDTO> list = new ArrayList<>();
+        groupRepository.findAll().forEach(i -> list.add(GroupViewDTO.builder()
+                .id(i.getId())
+                .name(i.getName())
+                .course(i.getCourse())
+                .speciality(i.getSpeciality().getId() + i.getSpeciality().getName())
+                .build()));
+        return list;
     }
 
     public User getUserById(Long id) {
@@ -283,14 +293,26 @@ public class AdminService {
     public Group getGroupById(Long id) {
         Group g = groupRepository.findById(id).orElseThrow(() -> {
             log.error("Group with id " + id + " not found");
-            return new UsernameNotFoundException("Teacher with id + " + id + " not found");
+            return new UsernameNotFoundException("Group with id " + id + " not found");
         });
         g.setSample(getTypeSchedule(g));
+
         return g;
     }
 
-    public List<Subject> getSubjects() {
-        return subjectRepository.findAll();
+    public List<SubjectAdminDTO> getSubjects() {
+        List<SubjectAdminDTO> list = new ArrayList<>();
+
+        subjectRepository.findAll().forEach(i -> {
+            list.add(
+                    SubjectAdminDTO.builder()
+                            .id(i.getId())
+                            .name(i.getName())
+                            .build()
+            );
+        });
+
+        return list;
     }
 
     public Subject getSubjectById(Long id) {

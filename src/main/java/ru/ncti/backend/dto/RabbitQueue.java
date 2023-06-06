@@ -8,4 +8,5 @@ package ru.ncti.backend.dto;
 
 public class RabbitQueue {
     public static final String EMAIL_UPDATE = "email_update";
+    public static final String CHAT_NOTIFICATION = "chat_notification";
 }

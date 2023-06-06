@@ -7,14 +7,12 @@ import lombok.Setter;
 /**
  * Created by IntelliJ IDEA.
  * User: Ivan Chuvilin (@ichuvilin)
- * Date: 29-05-2023
+ * Date: 06-06-2023
  */
 @Getter
 @Setter
 @Builder
-public class GroupViewDTO {
+public class SubjectAdminDTO {
     private Long id;
     private String name;
-    private Integer course;
-    private String speciality;
 }

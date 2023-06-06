@@ -4,6 +4,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 
+import java.util.Set;
+
 /**
  * Created by IntelliJ IDEA.
  * User: Ivan Chuvilin (@ichuvilin)
@@ -35,4 +37,7 @@ public class RedisService {
         redisTemplate.opsForSet().remove(key, value);
     }
 
+    public Set<String> getValueSet(String key) {
+        return redisTemplate.opsForSet().members(key);
+    }
 }

@@ -6,6 +6,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import ru.ncti.backend.dto.ChangePasswordDTO;
+import ru.ncti.backend.dto.FcmDTO;
 import ru.ncti.backend.dto.GroupViewDTO;
 import ru.ncti.backend.dto.ScheduleDTO;
 import ru.ncti.backend.dto.TeacherScheduleDTO;
@@ -52,6 +53,7 @@ public class UserService {
     private final GroupRepository groupRepository;
     private final SampleRepository sampleRepository;
     private final ScheduleRepository scheduleRepository;
+    private final RedisService redisService;
 
     public String changePassword(ChangePasswordDTO dto) throws IllegalArgumentException {
         var auth = SecurityContextHolder.getContext().getAuthentication();
@@ -252,5 +254,17 @@ public class UserService {
                 )))
                 .classroom(sample.getClassroom())
                 .build();
+    }
+
+    public String addFCMToken(FcmDTO dto) {
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        User currentUser = (User) auth.getPrincipal();
+
+        log.info(dto.getToken());
+        log.info(currentUser.getUsername());
+
+        redisService.setValueSet(String.format("device:%s", currentUser.getUsername()), dto.getToken());
+
+        return "Token was added";
     }
 }

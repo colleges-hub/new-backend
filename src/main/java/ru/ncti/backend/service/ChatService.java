@@ -2,7 +2,7 @@ package ru.ncti.backend.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,8 +21,11 @@ import ru.ncti.backend.repository.UserRepository;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
+
+import static ru.ncti.backend.dto.RabbitQueue.CHAT_NOTIFICATION;
 
 /**
  * Created by IntelliJ IDEA.
@@ -35,10 +38,10 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class ChatService {
 
-    private final SimpMessagingTemplate simpMessagingTemplate;
     private final UserRepository userRepository;
     private final ChatRepository chatRepository;
     private final MessageRepository messageRepository;
+    private final RabbitTemplate rabbitTemplate;
 
     public String createChat(ChatDTO dto) {
         var auth = SecurityContextHolder.getContext().getAuthentication();
@@ -103,6 +106,12 @@ public class ChatService {
 
         messageRepository.save(message);
 
+        rabbitTemplate.convertAndSend(CHAT_NOTIFICATION, new HashMap<>() {{
+            put("chat", chatId);
+            put("user", user.getUsername());
+            put("text", dto.getText());
+        }});
+
         return MessageFromChatDTO.builder()
                 .id(message.getId())
                 .text(message.getText())
@@ -138,6 +147,4 @@ public class ChatService {
 
         return dtos;
     }
-
-
 }
