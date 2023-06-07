@@ -39,6 +39,10 @@ jobs:
         ports:
           - 5672:5672
           - 15672:15672
+      redis:
+        image: redis:latest
+        ports:
+          - 6379:6379
 
     env:
       DB_URL: jdbc:postgresql://localhost:5432/myapp

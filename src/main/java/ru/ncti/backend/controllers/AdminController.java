@@ -15,12 +15,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import ru.ncti.backend.dto.GroupDTO;
-import ru.ncti.backend.dto.GroupViewDTO;
 import ru.ncti.backend.dto.SampleDTO;
 import ru.ncti.backend.dto.ScheduleDTO;
 import ru.ncti.backend.dto.SpecialityDTO;
 import ru.ncti.backend.dto.StudentDTO;
-import ru.ncti.backend.dto.SubjectAdminDTO;
 import ru.ncti.backend.dto.SubjectDTO;
 import ru.ncti.backend.dto.UserDTO;
 import ru.ncti.backend.entity.Group;
@@ -130,7 +128,7 @@ public class AdminController {
     }
 
     @GetMapping("/groups")
-    public ResponseEntity<List<GroupViewDTO>> getGroups() {
+    public ResponseEntity<List<Group>> getGroups() {
         return ResponseEntity.status(HttpStatus.OK).body(adminService.getGroups());
     }
 
@@ -150,7 +148,7 @@ public class AdminController {
     }
 
     @GetMapping("/subjects")
-    public ResponseEntity<List<SubjectAdminDTO>> getSubjects() {
+    public ResponseEntity<List<Subject>> getSubjects() {
         return ResponseEntity.status(HttpStatus.OK).body(adminService.getSubjects());
     }
 
