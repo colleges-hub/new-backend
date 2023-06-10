@@ -19,6 +19,7 @@ import ru.ncti.backend.repository.ChatRepository;
 import ru.ncti.backend.repository.MessageRepository;
 import ru.ncti.backend.repository.UserRepository;
 
+import java.security.Principal;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -90,11 +91,11 @@ public class ChatService {
     }
 
     @Transactional(readOnly = false)
-    public MessageFromChatDTO sendMessage(UUID chatId, MessageDTO dto) {
+    public MessageFromChatDTO sendMessage(UUID chatId, MessageDTO dto, Principal principal) {
         Chat chat = chatRepository.findById(chatId)
                 .orElseThrow(() -> new IllegalArgumentException("Chat not found"));
 
-        User user = userRepository.findById(dto.getSenderId())
+        User user = userRepository.findByEmail(principal.getName())
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
         Message message = Message.builder()

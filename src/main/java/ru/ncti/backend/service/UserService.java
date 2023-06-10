@@ -9,7 +9,7 @@ import ru.ncti.backend.dto.ChangePasswordDTO;
 import ru.ncti.backend.dto.FcmDTO;
 import ru.ncti.backend.dto.GroupViewDTO;
 import ru.ncti.backend.dto.ScheduleDTO;
-import ru.ncti.backend.dto.TeacherScheduleDTO;
+import ru.ncti.backend.dto.UserDTO;
 import ru.ncti.backend.dto.UserViewDTO;
 import ru.ncti.backend.entity.Group;
 import ru.ncti.backend.entity.Sample;
@@ -109,11 +109,11 @@ public class UserService {
                             .numberPair(schedule.getNumberPair())
                             .subject(schedule.getSubject().getName())
                             .teachers(List.of(
-                                    new TeacherScheduleDTO(
-                                            schedule.getTeacher().getFirstname(),
-                                            schedule.getTeacher().getLastname(),
-                                            schedule.getTeacher().getSurname()
-                                    )
+                                    UserDTO.builder()
+                                            .firstname(schedule.getTeacher().getFirstname())
+                                            .lastname(schedule.getTeacher().getLastname())
+                                            .surname(schedule.getTeacher().getSurname())
+                                            .build()
                             ))
                             .classroom(schedule.getClassroom())
                             .build();
@@ -199,14 +199,14 @@ public class UserService {
         String currentWeekType = getCurrentWeekType();
         Set<ScheduleDTO> set = new HashSet<>();
 
-        Map<String, List<TeacherScheduleDTO>> mergedTeachersMap = new HashMap<>();
+        Map<String, List<UserDTO>> mergedTeachersMap = new HashMap<>();
 
         sample.stream()
                 .filter(s -> s.getParity().equals("0") || s.getParity().equals(currentWeekType))
                 .forEach(s -> {
                     ScheduleDTO dto = convert(s);
                     String key = dto.getDay() + "-" + dto.getNumberPair() + "-" + dto.getClassroom() + "-" + dto.getSubject();
-                    List<TeacherScheduleDTO> mergedTeachers = mergedTeachersMap.get(key);
+                    List<UserDTO> mergedTeachers = mergedTeachersMap.get(key);
                     if (mergedTeachers != null) {
                         mergedTeachers.addAll(dto.getTeachers());
                     } else {
@@ -247,11 +247,11 @@ public class UserService {
                 .day(sample.getDay())
                 .numberPair(sample.getNumberPair())
                 .subject(sample.getSubject().getName())
-                .teachers(List.of(new TeacherScheduleDTO(
-                        sample.getTeacher().getFirstname(),
-                        sample.getTeacher().getLastname(),
-                        sample.getTeacher().getSurname()
-                )))
+                .teachers(List.of(UserDTO.builder()
+                        .firstname(sample.getTeacher().getFirstname())
+                        .lastname(sample.getTeacher().getLastname())
+                        .surname(sample.getTeacher().getSurname())
+                        .build()))
                 .classroom(sample.getClassroom())
                 .build();
     }

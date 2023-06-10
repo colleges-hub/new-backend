@@ -60,8 +60,6 @@ public class FirebaseService {
         // Users offline
         users.removeAll(userOnline);
 
-        log.info(userOnline);
-
         Set<String> usernames = users.stream()
                 .map(User::getUsername)
                 .collect(Collectors.toSet());
@@ -74,9 +72,7 @@ public class FirebaseService {
                 fcmTokens.addAll(deviceTokens);
             }
         }
-
-        log.info(fcmTokens);
-
+        
         if (!fcmTokens.isEmpty()) {
             MulticastMessage multicastMessage = MulticastMessage.builder()
                     .addAllTokens(fcmTokens)
@@ -84,8 +80,8 @@ public class FirebaseService {
                             .setTitle(String.format("Чат: %s", chat.getName()))
                             .setBody(String.format("%s: %s", user.getFirstname(), map.get("text")))
                             .build())
+                    .putData("page", "ChatRoute")
                     .build();
-
             firebaseMessaging.sendMulticast(multicastMessage);
         }
     }

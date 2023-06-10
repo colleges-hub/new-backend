@@ -25,7 +25,6 @@ class UserRepositoryTest {
         user.setEmail("admin@gmail.com");
 
         userRepository.save(user);
-
     }
 
     @Test
@@ -43,9 +42,18 @@ class UserRepositoryTest {
     }
 
     @Test
-    void findByLastnameAndFirstname() {
+    void findByLastnameAndFirstname_shouldBeNotNull() {
         User candidate = userRepository.findByLastnameAndFirstname("a", "a").orElse(null);
+
         assertNotNull(candidate);
+    }
+
+
+    @Test
+    void findByLastnameAndFirstname_shouldBeNull() {
+        User candidate = userRepository.findByLastnameAndFirstname("a", "b").orElse(null);
+
+        assertNull(candidate);
     }
 
 }

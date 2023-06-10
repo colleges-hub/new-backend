@@ -33,6 +33,6 @@ public class StudentController {
 
     @GetMapping("/schedule")
     public ResponseEntity<Map<String, Set<ScheduleDTO>>> getSchedule() {
-        return ResponseEntity.status(HttpStatus.OK).body(studentService.getSchedule());
+        return ResponseEntity.status(HttpStatus.OK).body(studentService.schedule());
     }
 }

@@ -7,7 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.ncti.backend.dto.ScheduleChangeDTO;
 import ru.ncti.backend.dto.TeacherScheduleViewDTO;
-import ru.ncti.backend.dto.TeacherViewDTO;
+import ru.ncti.backend.dto.UserDTO;
 import ru.ncti.backend.entity.Group;
 import ru.ncti.backend.entity.Sample;
 import ru.ncti.backend.entity.Schedule;
@@ -18,18 +18,22 @@ import ru.ncti.backend.repository.SampleRepository;
 import ru.ncti.backend.repository.ScheduleRepository;
 import ru.ncti.backend.repository.SubjectRepository;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.TextStyle;
 import java.time.temporal.WeekFields;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -42,17 +46,17 @@ import java.util.stream.Collectors;
 @Log4j
 @Service
 @RequiredArgsConstructor
-public class TeacherService {
+public class TeacherService implements UserInterface {
 
     private final SampleRepository sampleRepository;
     private final GroupRepository groupRepository;
     private final SubjectRepository subjectRepository;
     private final ScheduleRepository scheduleRepository;
 
-    public TeacherViewDTO getProfile() {
+    public UserDTO getProfile() {
         var auth = SecurityContextHolder.getContext().getAuthentication();
         User user = (User) auth.getPrincipal();
-        return TeacherViewDTO.builder()
+        return UserDTO.builder()
                 .firstname(user.getFirstname())
                 .lastname(user.getLastname())
                 .surname(user.getSurname())
@@ -60,25 +64,26 @@ public class TeacherService {
                 .build();
     }
 
-    public Map<String, Set<TeacherScheduleViewDTO>> getSchedule() {
+    @Override
+    public Map<String, Set<TeacherScheduleViewDTO>> schedule() {
         var auth = SecurityContextHolder.getContext().getAuthentication();
         User teacher = (User) auth.getPrincipal();
-        return makeSchedule(sampleRepository.findAllByTeacher(teacher));
+        return makeSchedule(sampleRepository.findAllByTeacher(teacher), teacher.getId());
     }
 
-    private Map<String, Set<TeacherScheduleViewDTO>> makeSchedule(List<Sample> list) {
+    private Map<String, Set<TeacherScheduleViewDTO>> makeSchedule(List<Sample> list, Long teacherId) {
         Map<String, Set<TeacherScheduleViewDTO>> map = new HashMap<>();
+        List<Schedule> sch = scheduleRepository.findLatestScheduleForTeacher(teacherId);
 
-        for (Sample s : getTypeSchedule(list)) {
-            String key = s.getDay();
+        for (Sample sample : getTypeSchedule(list)) {
+            String key = sample.getDay();
             TeacherScheduleViewDTO dto = TeacherScheduleViewDTO.builder()
-                    .classroom(s.getClassroom())
-                    .groups(List.of(s.getGroup().getName()))
-                    .numberPair(s.getNumberPair())
-                    .subject(s.getSubject().getName())
+                    .classroom(sample.getClassroom())
+                    .groups(List.of(sample.getGroup().getName()))
+                    .numberPair(sample.getNumberPair())
+                    .subject(sample.getSubject().getName())
                     .build();
 
-            // Проверяем наличие предмета с таким же номером пары и названием предмета
             Optional<TeacherScheduleViewDTO> found = map.getOrDefault(key, Collections.emptySet())
                     .stream()
                     .filter(scheduleDTO ->
@@ -88,7 +93,6 @@ public class TeacherService {
                     )
                     .findFirst();
 
-            // Если предмет найден, объединяем группы
             if (found.isPresent()) {
                 TeacherScheduleViewDTO existing = found.get();
                 Set<String> groups = new HashSet<>(existing.getGroups());
@@ -98,14 +102,35 @@ public class TeacherService {
                 map.computeIfAbsent(key, k -> new HashSet<>()).add(dto);
             }
         }
+
+        for (Schedule schedule : sch) {
+            String date = LocalDate.parse(schedule.getDate().toString(), DateTimeFormatter.ISO_DATE)
+                    .getDayOfWeek()
+                    .getDisplayName(TextStyle.FULL, new Locale("ru"));
+            String capitalizedDay = date.substring(0, 1).toUpperCase() + date.substring(1);
+
+            Set<TeacherScheduleViewDTO> set = map.get(capitalizedDay);
+            if (set != null) {
+                TeacherScheduleViewDTO newScheduleDTO = TeacherScheduleViewDTO.builder()
+                        .numberPair(schedule.getNumberPair())
+                        .subject(schedule.getSubject().getName())
+                        .classroom(schedule.getClassroom())
+                        .groups(List.of(schedule.getGroup().getName()))
+                        .build();
+                set.removeIf(s -> Objects.equals(s.getNumberPair(), newScheduleDTO.getNumberPair()));
+                set.add(newScheduleDTO);
+            }
+        }
+
         sortedMap(map);
         return map;
     }
 
     @Transactional(readOnly = false)
-    public String changeSchedule(ScheduleChangeDTO dto) {
+    public String changeSchedule(ScheduleChangeDTO dto) throws ParseException {
         var auth = SecurityContextHolder.getContext().getAuthentication();
         User teacher = (User) auth.getPrincipal();
+
         List<Group> groups = new ArrayList<>();
         for (String gr : dto.getGroup()) {
             Group group = groupRepository.findByName(gr)
@@ -116,18 +141,21 @@ public class TeacherService {
         Subject subject = subjectRepository.findByName(dto.getSubject())
                 .orElseThrow(() -> new IllegalArgumentException("Subject not found"));
 
+        SimpleDateFormat format = new SimpleDateFormat();
+        format.applyPattern("yyyy-MM-dd");
+        log.info(dto);
         for (Group group : groups) {
             Schedule schedule = Schedule.builder()
-                    .date(new Date())
+                    .date(format.parse(dto.getDate().split("T")[0]))
                     .group(group)
                     .teacher(teacher)
                     .numberPair(dto.getNumberPair())
                     .subject(subject)
                     .classroom(dto.getClassroom())
                     .build();
+            log.info(schedule);
             scheduleRepository.save(schedule);
         }
-
         return "Changes was added";
     }
 

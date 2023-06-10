@@ -22,6 +22,6 @@ public class ScheduleDTO {
     private String day;
     private Integer numberPair;
     private String subject;
-    private List<TeacherScheduleDTO> teachers;
+    private List<UserDTO> teachers;
     private String classroom;
 }

@@ -12,4 +12,8 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
 
     @Query(value = "SELECT * FROM raspisanie as s WHERE s.id_group = :groupId AND s.date = (SELECT MAX(date) FROM raspisanie WHERE id_group = :groupId AND date >= CURRENT_DATE)", nativeQuery = true)
     List<Schedule> findLatestScheduleForGroup(Long groupId);
+
+    @Query(value = "SELECT * FROM raspisanie as s WHERE s.teacher_id = :teacher and s.date = (SELECT MAX(date) FROM raspisanie WHERE s.teacher_id = :teacher AND date >= CURRENT_DATE)", nativeQuery = true)
+    List<Schedule> findLatestScheduleForTeacher(Long teacher);
+
 }

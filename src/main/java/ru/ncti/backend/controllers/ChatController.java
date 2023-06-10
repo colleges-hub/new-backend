@@ -18,8 +18,10 @@ import ru.ncti.backend.dto.ChatDTO;
 import ru.ncti.backend.dto.ChatViewDTO;
 import ru.ncti.backend.dto.MessageDTO;
 import ru.ncti.backend.dto.MessageFromChatDTO;
+import ru.ncti.backend.entity.User;
 import ru.ncti.backend.service.ChatService;
 
+import java.security.Principal;
 import java.util.List;
 import java.util.UUID;
 
@@ -59,8 +61,8 @@ public class ChatController {
     }
 
     @MessageMapping("/{chatId}")
-    public void handleChatMessage(@DestinationVariable("chatId") UUID id, MessageDTO message) {
-        MessageFromChatDTO mes = chatService.sendMessage(id, message);
+    public void handleChatMessage(@DestinationVariable("chatId") UUID id, MessageDTO message, Principal principal) {
+        MessageFromChatDTO mes = chatService.sendMessage(id, message, principal);
         simpMessagingTemplate.convertAndSend("/topic/chats/" + id, mes);
     }
 }

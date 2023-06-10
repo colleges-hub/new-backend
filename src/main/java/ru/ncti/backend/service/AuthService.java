@@ -8,6 +8,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import ru.ncti.backend.dto.AuthDTO;
+import ru.ncti.backend.dto.FcmDTO;
 import ru.ncti.backend.entity.User;
 import ru.ncti.backend.security.JwtTokenUtil;
 import ru.ncti.backend.security.UserDetailsServiceImpl;
@@ -29,6 +30,7 @@ public class AuthService {
     private final JwtTokenUtil jwtTokenUtil;
     private final AuthenticationManager authenticationManager;
     private final UserDetailsServiceImpl userDetailsService;
+    private final RedisService redisService;
 
 
     public Map<String, String> login(AuthDTO dto) {
@@ -60,4 +62,10 @@ public class AuthService {
         return Collections.emptyMap();
     }
 
+    public void logout(FcmDTO dto) {
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        User currentUser = (User) auth.getPrincipal();
+
+        redisService.deleteValueSet(String.format("device:%s", currentUser.getUsername()), dto.getToken());
+    }
 }
