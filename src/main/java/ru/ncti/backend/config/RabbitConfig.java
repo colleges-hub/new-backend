@@ -26,7 +26,12 @@ public class RabbitConfig {
     }
 
     @Bean
-    public Queue notificationQueue() {
-        return new Queue(RabbitQueue.CHAT_NOTIFICATION);
+    public Queue publicNotificationQueue() {
+        return new Queue(RabbitQueue.PUBLIC_CHAT_NOTIFICATION);
+    }
+
+    @Bean
+    public Queue privateNotificationQueue() {
+        return new Queue(RabbitQueue.PRIVATE_CHAT_NOTIFICATION);
     }
 }

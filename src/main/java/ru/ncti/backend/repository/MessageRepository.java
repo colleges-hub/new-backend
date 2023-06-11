@@ -2,8 +2,8 @@ package ru.ncti.backend.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
-import ru.ncti.backend.entity.Chat;
 import ru.ncti.backend.entity.Message;
+import ru.ncti.backend.entity.PrivateChat;
 
 import java.util.List;
 import java.util.UUID;
@@ -15,5 +15,5 @@ import java.util.UUID;
  */
 @Repository
 public interface MessageRepository extends JpaRepository<Message, UUID> {
-    List<Message> findAllByChatOrderByCreatedAtDesc(Chat chat);
+    List<Message> findAllByPrivateChatOrderByCreatedAtDesc(PrivateChat chat);
 }
