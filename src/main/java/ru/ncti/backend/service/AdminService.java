@@ -6,6 +6,7 @@ import com.opencsv.exceptions.CsvValidationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j;
 import org.modelmapper.ModelMapper;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -25,6 +26,7 @@ import ru.ncti.backend.entity.Sample;
 import ru.ncti.backend.entity.Speciality;
 import ru.ncti.backend.entity.Subject;
 import ru.ncti.backend.entity.User;
+import ru.ncti.backend.model.Email;
 import ru.ncti.backend.repository.GroupRepository;
 import ru.ncti.backend.repository.RoleRepository;
 import ru.ncti.backend.repository.SampleRepository;
@@ -37,11 +39,14 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.temporal.WeekFields;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
+
+import static ru.ncti.backend.dto.RabbitQueue.EMAIL_UPDATE;
 
 /**
  * Created by IntelliJ IDEA.
@@ -62,6 +67,7 @@ public class AdminService {
     private final SpecialityRepository specialityRepository;
     private final SubjectRepository subjectRepository;
     private final SampleRepository sampleRepository;
+    private final RabbitTemplate rabbitTemplate;
 
     public UserDTO getProfile() {
         var auth = SecurityContextHolder.getContext().getAuthentication();
@@ -111,6 +117,8 @@ public class AdminService {
 
         userRepository.save(student);
 
+        createEmailNotification(student, dto.getPassword());
+
         return "Студент успешно добавлен";
     }
 
@@ -125,6 +133,8 @@ public class AdminService {
         teacher.setPassword(passwordEncoder.encode(dto.getPassword()));
 
         userRepository.save(teacher);
+
+        createEmailNotification(teacher, dto.getPassword());
 
         return "Преподаватель успешно добавлен";
     }
@@ -335,6 +345,22 @@ public class AdminService {
         LocalDate currentDate = LocalDate.now();
         int currentWeekNumber = currentDate.get(WeekFields.of(Locale.getDefault()).weekOfWeekBasedYear());
         return currentWeekNumber % 2 == 0 ? "2" : "1";
+    }
+
+    private void createEmailNotification(User dto, String password) {
+        Email email = Email.builder()
+                .to(dto.getEmail())
+                .subject("Добро пожаловать в мобильное приложение.")
+                .template("welcome-email.html")
+                .properties(new HashMap<>() {{
+                    put("name", dto.getFirstname());
+                    put("subscriptionDate", LocalDate.now().toString());
+                    put("login", dto.getUsername());
+                    put("password", password);
+                }})
+                .build();
+
+        rabbitTemplate.convertAndSend(EMAIL_UPDATE, email);
     }
 
     private <S, D> D convert(S source, Class<D> dClass) {
