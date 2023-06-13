@@ -5,8 +5,8 @@ import lombok.extern.log4j.Log4j;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import ru.ncti.backend.dto.ScheduleDTO;
-import ru.ncti.backend.dto.StudentViewDTO;
 import ru.ncti.backend.dto.UserDTO;
+import ru.ncti.backend.dto.UserViewDTO;
 import ru.ncti.backend.entity.Group;
 import ru.ncti.backend.entity.Sample;
 import ru.ncti.backend.entity.Schedule;
@@ -43,17 +43,16 @@ public class StudentService implements UserInterface {
     private final SampleRepository sampleRepository;
     private final ScheduleRepository scheduleRepository;
 
-    public StudentViewDTO getProfile() {
+    public UserViewDTO getProfile() {
         var auth = SecurityContextHolder.getContext().getAuthentication();
         User student = (User) auth.getPrincipal();
-        return StudentViewDTO.builder()
+        return UserViewDTO.builder()
+                .id(student.getId())
                 .firstname(student.getFirstname())
                 .lastname(student.getLastname())
                 .surname(student.getSurname())
-                .email(student.getEmail())
-                .group(student.getGroup().getName())
-                .course(student.getGroup().getCourse())
-                .speciality(student.getGroup().getSpeciality().getName())
+                .email(student.getUsername())
+                .role(student.getRoles())
                 .build();
     }
 

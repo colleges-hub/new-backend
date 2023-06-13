@@ -1,7 +1,11 @@
 package ru.ncti.backend.entity;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.ToString;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Entity;
@@ -22,7 +26,11 @@ import java.util.UUID;
 @Setter
 @Getter
 @Entity
+@Builder
 @Table(name = "private_chat")
+@AllArgsConstructor
+@NoArgsConstructor
+@ToString
 public class PrivateChat {
 
     @Id

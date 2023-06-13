@@ -13,21 +13,26 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.ncti.backend.dto.ChatViewDTO;
 import ru.ncti.backend.entity.Chat;
+import ru.ncti.backend.entity.Group;
 import ru.ncti.backend.entity.PrivateChat;
 import ru.ncti.backend.entity.User;
 import ru.ncti.backend.repository.ChatRepository;
+import ru.ncti.backend.repository.GroupRepository;
 import ru.ncti.backend.repository.PrivateChatRepository;
 import ru.ncti.backend.repository.UserRepository;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import static ru.ncti.backend.dto.RabbitQueue.FIRST_MESSAGE;
 import static ru.ncti.backend.dto.RabbitQueue.PRIVATE_CHAT_NOTIFICATION;
 import static ru.ncti.backend.dto.RabbitQueue.PUBLIC_CHAT_NOTIFICATION;
+import static ru.ncti.backend.dto.RabbitQueue.UPDATE_SCHEDULE;
 
 /**
  * Created by IntelliJ IDEA.
@@ -45,6 +50,7 @@ public class FirebaseService {
     private final RedisService redisService;
     private final FirebaseMessaging firebaseMessaging;
     private final ObjectMapper objectMapper;
+    private final GroupRepository groupRepository;
 
     @RabbitListener(queues = PUBLIC_CHAT_NOTIFICATION)
     @Transactional(readOnly = true)
@@ -154,6 +160,60 @@ public class FirebaseService {
                 firebaseMessaging.sendMulticast(multicastMessage);
             }
         }
+    }
+
+    @RabbitListener(queues = FIRST_MESSAGE)
+    public void sendFirstNotifNewChat(Map<String, String> map) throws JsonProcessingException, FirebaseMessagingException {
+        User user = userRepository.findById(Long.valueOf(map.get("user")))
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+
+        Set<String> deviceTokens = redisService.getValueSet(String.format("device:%s", user.getUsername()));
+
+        if (!deviceTokens.isEmpty()) {
+            MulticastMessage multicastMessage = MulticastMessage.builder()
+                    .addAllTokens(deviceTokens)
+                    .setNotification(Notification.builder()
+                            .setTitle(map.get("name"))
+                            .setBody(String.format("%s", map.get("text")))
+                            .build())
+                    .putData("page", "ChatRoute")
+                    .putData("chat", objectMapper.writeValueAsString(ChatViewDTO.builder()
+                            .type("PRIVATE")
+                            .name(map.get("name"))
+                            .id(UUID.fromString(map.get("chat")))
+                            .build()))
+                    .build();
+            firebaseMessaging.sendMulticast(multicastMessage);
+        }
+    }
+
+
+    @RabbitListener(queues = UPDATE_SCHEDULE)
+    public void sendNotificationWithChanges(Map<String, ?> map) throws FirebaseMessagingException {
+        Group group = groupRepository.findByName(map.get("group").toString())
+                .orElseThrow(() -> new IllegalArgumentException("Group not found"));
+        List<User> students = userRepository.findAllByGroupOrderByLastname(group);
+
+        Set<String> tokens = new HashSet<>();
+
+        students.forEach(student -> {
+            Set<String> value = redisService.getValueSet(String.format("device:%s", student.getUsername()));
+            if (value != null) {
+                tokens.addAll(value);
+            }
+        });
+
+        log.info(tokens);
+
+        MulticastMessage multicastMessage = MulticastMessage.builder()
+                .addAllTokens(tokens)
+                .setNotification(Notification.builder()
+                        .setTitle(String.format("Преподаватель изменил кабинет на %s", map.get("date").toString().split(" ")[0]))
+                        .setBody(String.format("№ пары %d : %s", map.get("pair"), map.get("classroom")))
+                        .build())
+                .build();
+        firebaseMessaging.sendMulticast(multicastMessage);
     }
 
 }

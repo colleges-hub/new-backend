@@ -1,5 +1,6 @@
 package ru.ncti.backend.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -32,5 +33,6 @@ public class Subject {
     private String name;
 
     @OneToMany(mappedBy = "subject")
+    @JsonIgnore
     private List<Sample> samples;
 }

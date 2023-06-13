@@ -63,4 +63,9 @@ public class UserController {
     public ResponseEntity<List<UserViewDTO>> getUsers(@PathParam("type") String type) {
         return ResponseEntity.status(HttpStatus.OK).body(userService.getUsers(type));
     }
+
+    @GetMapping("/users/{id}")
+    public ResponseEntity<?> getUserById(@PathVariable("id") Long id) {
+        return ResponseEntity.status(HttpStatus.OK).body(userService.getUserById(id));
+    }
 }

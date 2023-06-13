@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import ru.ncti.backend.dto.ScheduleChangeDTO;
 import ru.ncti.backend.dto.TeacherScheduleViewDTO;
-import ru.ncti.backend.dto.UserDTO;
+import ru.ncti.backend.dto.UserViewDTO;
 import ru.ncti.backend.service.TeacherService;
 
 import java.text.ParseException;
@@ -30,7 +30,7 @@ public class TeacherController {
     private final TeacherService teacherService;
 
     @GetMapping("/profile")
-    public ResponseEntity<UserDTO> getProfile() {
+    public ResponseEntity<UserViewDTO> getProfile() {
         return ResponseEntity.status(HttpStatus.OK).body(teacherService.getProfile());
     }
 

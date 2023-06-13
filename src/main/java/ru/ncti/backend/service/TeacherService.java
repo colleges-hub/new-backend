@@ -2,12 +2,13 @@ package ru.ncti.backend.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.ncti.backend.dto.ScheduleChangeDTO;
 import ru.ncti.backend.dto.TeacherScheduleViewDTO;
-import ru.ncti.backend.dto.UserDTO;
+import ru.ncti.backend.dto.UserViewDTO;
 import ru.ncti.backend.entity.Group;
 import ru.ncti.backend.entity.Sample;
 import ru.ncti.backend.entity.Schedule;
@@ -38,6 +39,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static ru.ncti.backend.dto.RabbitQueue.UPDATE_SCHEDULE;
+
 /**
  * Created by IntelliJ IDEA.
  * User: Ivan Chuvilin (@ichuvilin)
@@ -52,15 +55,18 @@ public class TeacherService implements UserInterface {
     private final GroupRepository groupRepository;
     private final SubjectRepository subjectRepository;
     private final ScheduleRepository scheduleRepository;
+    private final RabbitTemplate rabbitTemplate;
 
-    public UserDTO getProfile() {
+    public UserViewDTO getProfile() {
         var auth = SecurityContextHolder.getContext().getAuthentication();
         User user = (User) auth.getPrincipal();
-        return UserDTO.builder()
+        return UserViewDTO.builder()
+                .id(user.getId())
                 .firstname(user.getFirstname())
                 .lastname(user.getLastname())
                 .surname(user.getSurname())
                 .email(user.getEmail())
+                .role(user.getRoles())
                 .build();
     }
 
@@ -143,7 +149,7 @@ public class TeacherService implements UserInterface {
 
         SimpleDateFormat format = new SimpleDateFormat();
         format.applyPattern("yyyy-MM-dd");
-        log.info(dto);
+
         for (Group group : groups) {
             Schedule schedule = Schedule.builder()
                     .date(format.parse(dto.getDate().split("T")[0]))
@@ -153,8 +159,14 @@ public class TeacherService implements UserInterface {
                     .subject(subject)
                     .classroom(dto.getClassroom())
                     .build();
-            log.info(schedule);
-            scheduleRepository.save(schedule);
+            rabbitTemplate.convertAndSend(UPDATE_SCHEDULE,
+                    new HashMap<>() {{
+                        put("date", dto.getDate());
+                        put("group", schedule.getGroup().getName());
+                        put("pair", schedule.getNumberPair());
+                        put("classroom", schedule.getClassroom());
+                    }});
+//            scheduleRepository.save(schedule);
         }
         return "Changes was added";
     }

@@ -32,6 +32,9 @@ public class Role {
     @Column(name = "name")
     private String name;
 
+    @Column(name = "description")
+    private String description;
+
     @JsonIgnore
     @ManyToMany(mappedBy = "roles")
     private Set<User> users;

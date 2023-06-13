@@ -19,7 +19,6 @@ import ru.ncti.backend.dto.ChatDTO;
 import ru.ncti.backend.dto.ChatViewDTO;
 import ru.ncti.backend.dto.MessageDTO;
 import ru.ncti.backend.dto.MessageFromChatDTO;
-import ru.ncti.backend.dto.PrivateChatDTO;
 import ru.ncti.backend.service.ChatService;
 
 import java.security.Principal;
@@ -46,6 +45,11 @@ public class ChatController {
         return ResponseEntity.status(HttpStatus.OK).body(chatService.getChatsFromUser());
     }
 
+    @PostMapping("/{chatId}/logout")
+    public ResponseEntity<String> leaveChat(@PathVariable("chatId") UUID uuid) {
+        return ResponseEntity.status(HttpStatus.OK).body(chatService.leaveChat(uuid));
+    }
+
     @PostMapping("/{chatId}")
     public ResponseEntity<String> addUsersToChat(@PathVariable("chatId") UUID id, @RequestBody AddUserDTO dto) {
         return ResponseEntity.status(HttpStatus.OK).body(chatService.addUsersToChats(id, dto));
@@ -54,11 +58,6 @@ public class ChatController {
     @PostMapping("/create-public")
     public ResponseEntity<String> createPublicChat(@RequestBody ChatDTO dto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(chatService.createPublicChat(dto));
-    }
-
-    @PostMapping("/create-private")
-    public ResponseEntity<String> createPrivateChat(@RequestBody PrivateChatDTO dto) {
-        return ResponseEntity.status(HttpStatus.OK).body(chatService.createPrivateChat(dto));
     }
 
     @GetMapping("/{chatId}")
@@ -73,9 +72,9 @@ public class ChatController {
         simpMessagingTemplate.convertAndSend("/topic/public/" + id, mes);
     }
 
-    @MessageMapping("/{chatId}/user")
-    public void handlePrivateMessage(@DestinationVariable("chatId") UUID id, MessageDTO message, Principal principal) {
-        MessageFromChatDTO mes = chatService.sendToPrivate(id, message, principal);
+    @MessageMapping("/{chatId}/{user}")
+    public void handlePrivateMessage(@DestinationVariable("chatId") UUID id, @DestinationVariable("user") String user, MessageDTO message, Principal principal) {
+        MessageFromChatDTO mes = chatService.sendToPrivate(id, user, message, principal);
         simpMessagingTemplate.convertAndSend("/topic/private/" + id, mes);
     }
 }

@@ -1,5 +1,6 @@
 package ru.ncti.backend.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -43,10 +44,12 @@ public class Schedule {
     @Column(name = "date")
     private Date date;
 
+    @JsonIgnore
     @ManyToOne
     @JoinColumn(name = "id_group")
     private Group group;
 
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "subject_id")
     private Subject subject;

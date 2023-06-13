@@ -5,8 +5,9 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import ru.ncti.backend.entity.Role;
 
-import java.util.List;
+import java.util.Set;
 
 /**
  * Created by IntelliJ IDEA.
@@ -26,4 +27,5 @@ public class StudentViewDTO {
     private String group;
     private String speciality;
     private Integer course;
+    private Set<Role> role;
 }

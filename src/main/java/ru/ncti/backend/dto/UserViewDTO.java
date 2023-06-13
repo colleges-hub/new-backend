@@ -5,6 +5,9 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import ru.ncti.backend.entity.Role;
+
+import java.util.Set;
 
 /**
  * Created by IntelliJ IDEA.
@@ -22,5 +25,6 @@ public class UserViewDTO {
     private String lastname;
     private String surname;
     private String email;
-    private String username;
+    private Set<Role> role;
+    private String chat;
 }

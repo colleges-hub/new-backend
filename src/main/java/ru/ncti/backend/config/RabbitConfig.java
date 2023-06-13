@@ -34,4 +34,14 @@ public class RabbitConfig {
     public Queue privateNotificationQueue() {
         return new Queue(RabbitQueue.PRIVATE_CHAT_NOTIFICATION);
     }
+
+    @Bean
+    public Queue scheduleNotificationQueue() {
+        return new Queue(RabbitQueue.UPDATE_SCHEDULE);
+    }
+
+    @Bean
+    public Queue firstMessageQueue() {
+        return new Queue(RabbitQueue.FIRST_MESSAGE);
+    }
 }

@@ -12,10 +12,12 @@ import ru.ncti.backend.dto.ScheduleDTO;
 import ru.ncti.backend.dto.UserDTO;
 import ru.ncti.backend.dto.UserViewDTO;
 import ru.ncti.backend.entity.Group;
+import ru.ncti.backend.entity.PrivateChat;
 import ru.ncti.backend.entity.Sample;
 import ru.ncti.backend.entity.Schedule;
 import ru.ncti.backend.entity.User;
 import ru.ncti.backend.repository.GroupRepository;
+import ru.ncti.backend.repository.PrivateChatRepository;
 import ru.ncti.backend.repository.RoleRepository;
 import ru.ncti.backend.repository.SampleRepository;
 import ru.ncti.backend.repository.ScheduleRepository;
@@ -54,6 +56,7 @@ public class UserService {
     private final SampleRepository sampleRepository;
     private final ScheduleRepository scheduleRepository;
     private final RedisService redisService;
+    private final PrivateChatRepository privateChatRepository;
 
     public String changePassword(ChangePasswordDTO dto) throws IllegalArgumentException {
         var auth = SecurityContextHolder.getContext().getAuthentication();
@@ -133,6 +136,26 @@ public class UserService {
         return map;
     }
 
+    public UserViewDTO getUserById(Long id) {
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        User currentUser = (User) auth.getPrincipal();
+
+        User candidate = userRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        PrivateChat privateChat = privateChatRepository.findByUser1AndUser2OrUser1AndUser2(currentUser, candidate, candidate, currentUser);
+
+        return UserViewDTO.builder()
+                .id(candidate.getId())
+                .firstname(candidate.getFirstname())
+                .lastname(candidate.getLastname())
+                .surname(candidate.getSurname())
+                .email(candidate.getUsername())
+                .role(candidate.getRoles())
+                .chat(privateChat != null ? privateChat.getId().toString() : null)
+                .build();
+    }
+
     public List<UserViewDTO> getUsers(String type) {
         var auth = SecurityContextHolder.getContext().getAuthentication();
         User currentUser = (User) auth.getPrincipal();
@@ -148,7 +171,7 @@ public class UserService {
                             .lastname(user.getLastname())
                             .surname(user.getSurname())
                             .email(user.getEmail())
-                            .username(user.getUsername())
+                            .role(user.getRoles())
                             .build());
                 }
             });
@@ -165,7 +188,6 @@ public class UserService {
                                                 .lastname(s.getLastname())
                                                 .surname(s.getSurname())
                                                 .email(s.getEmail())
-                                                .username(s.getUsername())
                                                 .build());
                                     }
                                 });
@@ -183,7 +205,6 @@ public class UserService {
                                                 .lastname(s.getLastname())
                                                 .surname(s.getSurname())
                                                 .email(s.getEmail())
-                                                .username(s.getUsername())
                                                 .build());
                                     }
                                 });

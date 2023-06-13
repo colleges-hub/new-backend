@@ -56,7 +56,7 @@ public class User implements UserDetails {
 
     @Column(name = "password")
     private String password;
-
+    
     @Column(nullable = false)
     private Boolean isAccountNonExpired = true;
     @Column(nullable = false)
