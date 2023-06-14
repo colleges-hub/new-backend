@@ -9,8 +9,6 @@ import lombok.ToString;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
@@ -30,11 +28,9 @@ import java.util.UUID;
 @Table(name = "private_chat")
 @AllArgsConstructor
 @NoArgsConstructor
-@ToString
 public class PrivateChat {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
     private UUID id;
 
     @OneToOne

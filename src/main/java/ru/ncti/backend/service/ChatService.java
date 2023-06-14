@@ -29,6 +29,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import static ru.ncti.backend.dto.RabbitQueue.FIRST_MESSAGE;
@@ -229,7 +230,9 @@ public class ChatService {
 
             return createMessage(message, user);
         } else {
-            if (privateChatRepository.findById(id).isEmpty()) {
+            log.info(id);
+            Optional<PrivateChat> privateChat = privateChatRepository.findById(id);
+            if (privateChat.isEmpty()) {
                 User first = userRepository.findByEmail(principal.getName())
                         .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
@@ -242,35 +245,39 @@ public class ChatService {
                         .createdAt(Instant.now())
                         .build();
 
-                PrivateChat privateChat = PrivateChat.builder()
+                PrivateChat newPrivateChat = PrivateChat.builder()
                         .id(id)
                         .user1(first)
                         .user2(second)
                         .messages(List.of(message))
                         .build();
-
-                message.setPrivateChat(privateChat);
-                privateChatRepository.save(privateChat);
-                rabbitTemplate.convertAndSend(FIRST_MESSAGE, new HashMap<>() {{
-                    put("user", second.getId().toString());
-                    put("name", String.format("%s %s", first.getFirstname(), first.getLastname()));
-                    put("chat", privateChat.getId().toString());
-                    put("text", message.getText());
-                }});
+                message.setPrivateChat(newPrivateChat);
+                privateChatRepository.save(newPrivateChat);
+                log.info(message);
                 return MessageFromChatDTO.builder()
-                        .id(message.getId())
+                        .id(UUID.randomUUID())
                         .text(message.getText())
                         .type("text")
                         .author(UserFromMessageDTO.builder()
-                                .id(String.valueOf(message.getSender().getId()))
-                                .firstName(message.getSender().getFirstname())
-                                .lastName(message.getSender().getLastname())
+                                .id(String.valueOf(first.getId()))
+                                .firstName(first.getFirstname())
+                                .lastName(first.getLastname())
                                 .build())
                         .createdAt(message.getCreatedAt().toEpochMilli())
                         .build();
             } else {
-                //todo
-                return null;
+                User user = userRepository.findByEmail(principal.getName())
+                        .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+                Message message = Message.builder()
+                        .sender(user)
+                        .text(dto.getText())
+                        .privateChat(privateChat.get())
+                        .createdAt(Instant.now())
+                        .build();
+
+                messageRepository.save(message);
+                return createMessage(message, user);
             }
         }
     }

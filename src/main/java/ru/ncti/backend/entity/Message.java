@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.ToString;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
@@ -26,6 +27,7 @@ import java.util.UUID;
 @Setter
 @Entity
 @Builder
+@ToString
 @Table(name = "message")
 @AllArgsConstructor
 @NoArgsConstructor
