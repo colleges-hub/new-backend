@@ -9,12 +9,14 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import ru.ncti.backend.dto.GroupDTO;
+import ru.ncti.backend.dto.ResetPasswordDTO;
 import ru.ncti.backend.dto.SampleDTO;
 import ru.ncti.backend.dto.ScheduleDTO;
 import ru.ncti.backend.dto.SpecialityDTO;
@@ -170,6 +172,11 @@ public class AdminController {
     @DeleteMapping("/groups/{id}")
     public ResponseEntity<String> deleteGroupById(@PathVariable("id") Long id) {
         return ResponseEntity.status(HttpStatus.OK).body(adminService.deleteGroupById(id));
+    }
+
+    @PutMapping("/reset")
+    public ResponseEntity<?> resetPassword(@RequestBody ResetPasswordDTO dto) {
+        return ResponseEntity.status(HttpStatus.OK).body(adminService.resetPasswordForUserById(dto));
     }
 
 }

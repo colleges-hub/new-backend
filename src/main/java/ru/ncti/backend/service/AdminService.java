@@ -13,6 +13,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import ru.ncti.backend.dto.GroupDTO;
+import ru.ncti.backend.dto.ResetPasswordDTO;
 import ru.ncti.backend.dto.SampleDTO;
 import ru.ncti.backend.dto.SampleUploadDTO;
 import ru.ncti.backend.dto.ScheduleDTO;
@@ -365,5 +366,16 @@ public class AdminService {
 
     private <S, D> D convert(S source, Class<D> dClass) {
         return modelMapper.map(source, dClass);
+    }
+
+    public String resetPasswordForUserById(ResetPasswordDTO dto) {
+        //todo: add send email with changed password
+        User candidate = userRepository.findById(dto.getId()).orElseThrow(() -> {
+            log.error("User with id " + dto.getPassword() + "not found");
+            return new UsernameNotFoundException("User with id " + dto.getPassword() + "not found");
+        });
+        candidate.setPassword(passwordEncoder.encode(dto.getPassword()));
+        userRepository.save(candidate);
+        return "Password was reset";
     }
 }
