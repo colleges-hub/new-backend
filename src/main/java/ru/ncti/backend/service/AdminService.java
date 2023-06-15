@@ -378,4 +378,22 @@ public class AdminService {
         userRepository.save(candidate);
         return "Password was reset";
     }
+
+    public String createSchedule(SampleDTO dto) {
+        Group g = groupRepository.getById(dto.getGroup());
+        User teacher = userRepository.getById(dto.getTeacher());
+        Subject subject = subjectRepository.getById(dto.getSubject());
+
+        Sample sample = Sample.builder()
+                .day(dto.getDay())
+                .group(g)
+                .numberPair(dto.getNumberPair())
+                .teacher(teacher)
+                .subject(subject)
+                .classroom(dto.getClassroom())
+                .parity(dto.getParity())
+                .build();
+        sampleRepository.save(sample);
+        return "OK";
+    }
 }

@@ -68,6 +68,11 @@ public class AdminController {
         return ResponseEntity.status(HttpStatus.CREATED).body(adminService.createSpeciality(dto));
     }
 
+    @PostMapping("/schedule")
+    public ResponseEntity<String> createSchedule(@RequestBody SampleDTO dto) {
+        return ResponseEntity.status(HttpStatus.OK).body(adminService.createSchedule(dto));
+    }
+
     @PostMapping("/create-group")
     public ResponseEntity<String> createGroup(@RequestBody GroupDTO dto) {
         try {
