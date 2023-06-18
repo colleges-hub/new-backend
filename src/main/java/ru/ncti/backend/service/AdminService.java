@@ -394,9 +394,21 @@ public class AdminService {
     }
 
     public String createSchedule(SampleDTO dto) {
-        Group g = groupRepository.getById(dto.getGroup());
-        User teacher = userRepository.getById(dto.getTeacher());
-        Subject subject = subjectRepository.getById(dto.getSubject());
+        Group g = groupRepository.findById(dto.getGroup())
+                .orElseThrow(() -> {
+                    log.error(String.format("Group %d already exist", dto.getGroup()));
+                    return new IllegalArgumentException(String.format("Group %d already exist", dto.getGroup()));
+                });
+        User teacher = userRepository.findById(dto.getTeacher())
+                .orElseThrow(() -> {
+                    log.error(String.format("Teacher %d already exist", dto.getTeacher()));
+                    return new IllegalArgumentException(String.format("Teacher %d already exist", dto.getTeacher()));
+                });
+        Subject subject = subjectRepository.findById(dto.getSubject())
+                .orElseThrow(() -> {
+                    log.error(String.format("Subject %d already exist", dto.getSubject()));
+                    return new IllegalArgumentException(String.format("Subject %d already exist", dto.getSubject()));
+                });
 
         Sample sample = Sample.builder()
                 .day(dto.getDay())
