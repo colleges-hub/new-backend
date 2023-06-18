@@ -2,7 +2,6 @@ package ru.ncti.backend.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j;
-import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -32,7 +31,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import static ru.ncti.backend.dto.RabbitQueue.FIRST_MESSAGE;
 import static ru.ncti.backend.dto.RabbitQueue.PRIVATE_CHAT_NOTIFICATION;
 import static ru.ncti.backend.dto.RabbitQueue.PUBLIC_CHAT_NOTIFICATION;
 
@@ -64,7 +62,7 @@ public class ChatService {
         if (!dto.getIds().isEmpty()) {
             for (Long id :
                     dto.getIds()) {
-                chat.getUsers().add(userRepository.getById(id));
+                chat.getUsers().add(userRepository.findById(id).orElse(null));
             }
         }
 
@@ -88,10 +86,10 @@ public class ChatService {
                 .build()));
 
         pChat.forEach(chat -> {
-            User chatname = chat.getChatName(user);
+            User chatName = chat.getChatName(user);
             dtos.add(ChatViewDTO.builder()
                     .id(chat.getId())
-                    .name(String.format("%s %s", chatname.getFirstname(), chatname.getLastname()))
+                    .name(String.format("%s %s", chatName.getFirstname(), chatName.getLastname()))
                     .type("PRIVATE")
                     .build());
         });
@@ -106,7 +104,7 @@ public class ChatService {
 
         dto.getIds().forEach(id -> chat.getUsers()
                 .add(userRepository.findById(id)
-                        .orElseThrow(() -> new IllegalArgumentException("User not found"))));
+                        .orElse(null)));
 
         return "Users was added";
     }
@@ -230,7 +228,6 @@ public class ChatService {
 
             return createMessage(message, user);
         } else {
-            log.info(id);
             Optional<PrivateChat> privateChat = privateChatRepository.findById(id);
             if (privateChat.isEmpty()) {
                 User first = userRepository.findByEmail(principal.getName())
@@ -301,13 +298,4 @@ public class ChatService {
                 .createdAt(message.getCreatedAt().toEpochMilli())
                 .build();
     }
-
-    @RabbitListener(queues = FIRST_MESSAGE)
-    private void updateMessage(List<?> list) {
-        PrivateChat privateChat = (PrivateChat) list.get(0);
-        Message message = (Message) list.get(1);
-        message.setPrivateChat(privateChat);
-        messageRepository.save(message);
-    }
-
 }

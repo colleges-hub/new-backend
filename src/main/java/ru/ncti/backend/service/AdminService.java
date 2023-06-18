@@ -105,12 +105,12 @@ public class AdminService {
         Role role = roleRepository.findByName("ROLE_STUDENT")
                 .orElseThrow(() -> {
                     log.error("ROLE_STUDENT not found");
-                    return new UsernameNotFoundException("ROLE_STUDENT not found");
+                    return new IllegalArgumentException("ROLE_STUDENT not found");
                 });
         Group group = groupRepository.findByName(dto.getGroup())
                 .orElseThrow(() -> {
-                    log.error("Group " + dto.getGroup() + " not found");
-                    return new UsernameNotFoundException("Group not found");
+                    log.error(String.format("Group %s not found", dto.getGroup()));
+                    return new IllegalArgumentException("Group not found");
                 });
         student.setGroup(group);
         student.setPassword(passwordEncoder.encode(dto.getPassword()));
@@ -128,7 +128,7 @@ public class AdminService {
         Role role = roleRepository.findByName("ROLE_TEACHER")
                 .orElseThrow(() -> {
                     log.error("ROLE_TEACHER not found");
-                    return new UsernameNotFoundException("ROLE_TEACHER not found");
+                    return new IllegalArgumentException("ROLE_TEACHER not found");
                 });
         teacher.setRoles(Set.of(role));
         teacher.setPassword(passwordEncoder.encode(dto.getPassword()));
@@ -142,17 +142,17 @@ public class AdminService {
 
     public String createSpeciality(SpecialityDTO dto) {
         if (specialityRepository.findById(dto.getId()).isPresent()) {
-            log.error("Speciality " + dto.getName() + " already exist");
-            throw new UsernameNotFoundException("Speciality " + dto.getName() + " already exist");
+            log.error(String.format("Speciality %s already exist", dto.getName()));
+            throw new IllegalArgumentException(String.format("Speciality %s already exist", dto.getName()));
         }
         specialityRepository.save(convert(dto, Speciality.class));
         return "Специальность успешно добавлена";
     }
 
-    public String createGroup(GroupDTO dto) throws Exception {
+    public String createGroup(GroupDTO dto) {
         if (groupRepository.findByName(dto.getName()).isPresent()) {
-            log.error("Group" + dto.getName() + " already exist");
-            throw new UsernameNotFoundException("Group" + dto.getName() + " already exist");
+            log.error(String.format("Group %s already exist", dto.getName()));
+            throw new IllegalArgumentException(String.format("Group %s already exist", dto.getName()));
         }
         Group group = convert(dto, Group.class);
         groupRepository.save(group);
@@ -160,9 +160,21 @@ public class AdminService {
     }
 
     public String createSample(SampleDTO dto) {
-        Group g = groupRepository.getById(dto.getGroup());
-        User teacher = userRepository.getById(dto.getTeacher());
-        Subject subject = subjectRepository.getById(dto.getSubject());
+        Group g = groupRepository.findById(dto.getGroup())
+                .orElseThrow(() -> {
+                    log.error(String.format("Group %d already exist", dto.getGroup()));
+                    return new IllegalArgumentException(String.format("Group %d already exist", dto.getGroup()));
+                });
+        User teacher = userRepository.findById(dto.getTeacher())
+                .orElseThrow(() -> {
+                    log.error(String.format("Teacher %d already exist", dto.getTeacher()));
+                    return new IllegalArgumentException(String.format("Teacher %d already exist", dto.getTeacher()));
+                });
+        Subject subject = subjectRepository.findById(dto.getSubject())
+                .orElseThrow(() -> {
+                    log.error(String.format("Subject %d already exist", dto.getSubject()));
+                    return new IllegalArgumentException(String.format("Subject %d already exist", dto.getSubject()));
+                });
 
         Sample sample = Sample.builder()
                 .day(dto.getDay())
@@ -179,8 +191,8 @@ public class AdminService {
 
     public String createSubject(SubjectDTO dto) {
         if (subjectRepository.findByName(dto.getName()).isPresent()) {
-            log.error("Subject " + dto.getName() + " already exist");
-            throw new IllegalArgumentException("Subject " + dto.getName() + " already exist");
+            log.error(String.format("Subject %s already exist", dto.getName()));
+            throw new IllegalArgumentException(String.format("Subject %s already exist", dto.getName()));
         }
         subjectRepository.save(convert(dto, Subject.class));
         return "Предмет успешно добавлен";
@@ -195,9 +207,9 @@ public class AdminService {
                 .map(student -> CompletableFuture.runAsync(() -> {
                     try {
                         createStudent(student);
-                    } catch (UsernameNotFoundException e) {
+                    } catch (IllegalArgumentException e) {
                         log.error(e);
-                        throw new RuntimeException(e);
+                        throw new IllegalArgumentException(e);
                     }
                 })).toList();
 
@@ -217,8 +229,9 @@ public class AdminService {
                 .map(teacher -> CompletableFuture.runAsync(() -> {
                     try {
                         createTeacher(teacher);
-                    } catch (UsernameNotFoundException e) {
-                        throw new RuntimeException(e);
+                    } catch (IllegalArgumentException e) {
+                        log.error(e);
+                        throw new IllegalArgumentException(e);
                     }
                 }))
                 .toList();
@@ -240,14 +253,14 @@ public class AdminService {
                 .map(s -> CompletableFuture.runAsync(() -> {
                     Group g = groupRepository.findByName(s.getGroup())
                             .orElseThrow(() -> {
-                                log.error("Group " + s.getGroup() + " not found");
-                                return new IllegalArgumentException("Group " + s.getGroup() + " not found");
+                                log.error(String.format("Group %s not found", s.getGroup()));
+                                return new IllegalArgumentException(String.format("Group %s not found", s.getGroup()));
                             });
                     String[] teacherName = s.getTeacher().split(" ");
                     User t = userRepository.findByLastnameAndFirstname(teacherName[0], teacherName[1])
                             .orElseThrow(() -> {
-                                log.error("Teacher " + s.getTeacher() + " not found");
-                                return new IllegalArgumentException("Teacher " + s.getTeacher() + " not found");
+                                log.error(String.format("Teacher %s not found", s.getTeacher()));
+                                return new IllegalArgumentException(String.format("Teacher %s not found", s.getTeacher()));
                             });
 
                     Sample sch = convert(s, Sample.class);
@@ -269,8 +282,8 @@ public class AdminService {
 
     public List<User> getStudentsByGroup(Long group) {
         Group g = groupRepository.findById(group).orElseThrow(() -> {
-            log.error("Group with id " + group + " not found");
-            return new UsernameNotFoundException("Group with id " + group + " not found");
+            log.error(String.format("Group %s not found", group));
+            return new IllegalArgumentException("Group not found");
         });
         return userRepository.findAllByGroupOrderByLastname(g);
     }
@@ -286,15 +299,15 @@ public class AdminService {
 
     public User getUserById(Long id) {
         return userRepository.findById(id).orElseThrow(() -> {
-            log.error("User with id " + id + " not found");
-            return new UsernameNotFoundException("User with id + " + id + " not found");
+            log.error(String.format("User with id %d not found", id));
+            return new IllegalArgumentException(String.format("User with id %d not found", id));
         });
     }
 
     public Group getGroupById(Long id) {
         Group g = groupRepository.findById(id).orElseThrow(() -> {
-            log.error("Group with id " + id + " not found");
-            return new UsernameNotFoundException("Group with id " + id + " not found");
+            log.error(String.format("Group with id %d not found", id));
+            return new IllegalArgumentException(String.format("Group with id %d not found", id));
         });
         g.setSample(getTypeSchedule(g));
 
@@ -321,14 +334,15 @@ public class AdminService {
         return "User successfully deleted";
     }
 
+    //todo
     public String changeSchedule(ScheduleDTO dto) {
         return null;
     }
 
     public String deleteGroupById(Long id) {
         Group group = groupRepository.findById(id).orElseThrow(() -> {
-            log.error("Group with id " + id + " not found");
-            return new UsernameNotFoundException("Group with id + " + id + " not found");
+            log.error(String.format("Group with id %d not found", id));
+            return new IllegalArgumentException(String.format("Group with id %d not found", id));
         });
         groupRepository.delete(group);
         return "Group successfully deleted";

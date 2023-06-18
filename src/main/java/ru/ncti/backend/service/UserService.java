@@ -18,7 +18,6 @@ import ru.ncti.backend.entity.Schedule;
 import ru.ncti.backend.entity.User;
 import ru.ncti.backend.repository.GroupRepository;
 import ru.ncti.backend.repository.PrivateChatRepository;
-import ru.ncti.backend.repository.RoleRepository;
 import ru.ncti.backend.repository.SampleRepository;
 import ru.ncti.backend.repository.ScheduleRepository;
 import ru.ncti.backend.repository.UserRepository;
@@ -50,7 +49,6 @@ import java.util.stream.Collectors;
 public class UserService {
 
     private final UserRepository userRepository;
-    private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
     private final GroupRepository groupRepository;
     private final SampleRepository sampleRepository;
@@ -156,64 +154,27 @@ public class UserService {
                 .build();
     }
 
-    public List<UserViewDTO> getUsers(String type) {
+    public List<UserViewDTO> getUsers() {
         var auth = SecurityContextHolder.getContext().getAuthentication();
         User currentUser = (User) auth.getPrincipal();
 
         final List<UserViewDTO> users = new ArrayList<>();
 
-        if (type == null) {
-            userRepository.findAll().forEach(user -> {
-                if (!user.getId().equals(currentUser.getId()) && user.getId() != 1) {
-                    users.add(UserViewDTO.builder()
-                            .id(user.getId())
-                            .firstname(user.getFirstname())
-                            .lastname(user.getLastname())
-                            .surname(user.getSurname())
-                            .email(user.getEmail())
-                            .role(user.getRoles())
-                            .build());
-                }
-            });
-        } else if (type.equals("student")) {
-            roleRepository.findByName("ROLE_STUDENT")
-                    .ifPresent(role -> {
-                        userRepository
-                                .findAllByRoles(role)
-                                .forEach(s -> {
-                                    if (!s.getId().equals(currentUser.getId()) && s.getId() != 1) {
-                                        users.add(UserViewDTO.builder()
-                                                .id(s.getId())
-                                                .firstname(s.getFirstname())
-                                                .lastname(s.getLastname())
-                                                .surname(s.getSurname())
-                                                .email(s.getEmail())
-                                                .build());
-                                    }
-                                });
-                    });
-        } else if (type.equals("teacher")) {
-            roleRepository.findByName("ROLE_TEACHER")
-                    .ifPresent(role -> {
-                        userRepository
-                                .findAllByRoles(role)
-                                .forEach(s -> {
-                                    if (!s.getId().equals(currentUser.getId()) && s.getId() != 1) {
-                                        users.add(UserViewDTO.builder()
-                                                .id(s.getId())
-                                                .firstname(s.getFirstname())
-                                                .lastname(s.getLastname())
-                                                .surname(s.getSurname())
-                                                .email(s.getEmail())
-                                                .build());
-                                    }
-                                });
-                    });
-        }
+        userRepository.findAll().forEach(user -> {
+            if (!user.getId().equals(currentUser.getId())) {
+                users.add(UserViewDTO.builder()
+                        .id(user.getId())
+                        .firstname(user.getFirstname())
+                        .lastname(user.getLastname())
+                        .surname(user.getSurname())
+                        .email(user.getEmail())
+                        .role(user.getRoles())
+                        .build());
+            }
+        });
 
         return users;
     }
-
 
     private Set<ScheduleDTO> getTypeSchedule(Group group) {
         List<Sample> sample = sampleRepository.findAllByGroup(group);

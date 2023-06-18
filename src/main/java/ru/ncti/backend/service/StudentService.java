@@ -38,7 +38,7 @@ import java.util.stream.Collectors;
 @Log4j
 @Service
 @RequiredArgsConstructor
-public class StudentService implements UserInterface {
+public class StudentService {
 
     private final SampleRepository sampleRepository;
     private final ScheduleRepository scheduleRepository;
@@ -56,7 +56,6 @@ public class StudentService implements UserInterface {
                 .build();
     }
 
-    @Override
     public Map<String, Set<ScheduleDTO>> schedule() {
         var auth = SecurityContextHolder.getContext().getAuthentication();
         User student = (User) auth.getPrincipal();
@@ -71,6 +70,7 @@ public class StudentService implements UserInterface {
         for (ScheduleDTO s : currSample) {
             map.computeIfAbsent(s.getDay(), k -> new HashSet<>()).add(s);
         }
+        
         List<Schedule> sch = scheduleRepository.findLatestScheduleForGroup(student.getGroup().getId());
 
         if (!sch.isEmpty()) {

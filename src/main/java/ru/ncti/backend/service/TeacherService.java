@@ -49,7 +49,7 @@ import static ru.ncti.backend.dto.RabbitQueue.UPDATE_SCHEDULE;
 @Log4j
 @Service
 @RequiredArgsConstructor
-public class TeacherService implements UserInterface {
+public class TeacherService {
 
     private final SampleRepository sampleRepository;
     private final GroupRepository groupRepository;
@@ -70,7 +70,6 @@ public class TeacherService implements UserInterface {
                 .build();
     }
 
-    @Override
     public Map<String, Set<TeacherScheduleViewDTO>> schedule() {
         var auth = SecurityContextHolder.getContext().getAuthentication();
         User teacher = (User) auth.getPrincipal();
@@ -140,12 +139,18 @@ public class TeacherService implements UserInterface {
         List<Group> groups = new ArrayList<>();
         for (String gr : dto.getGroup()) {
             Group group = groupRepository.findByName(gr)
-                    .orElseThrow(() -> new IllegalArgumentException("Group not found"));
+                    .orElseThrow(() -> {
+                        log.error(String.format("Group %s not found", gr));
+                        return new IllegalArgumentException(String.format("Group %s not found", gr));
+                    });
             groups.add(group);
         }
 
         Subject subject = subjectRepository.findByName(dto.getSubject())
-                .orElseThrow(() -> new IllegalArgumentException("Subject not found"));
+                .orElseThrow(() -> {
+                    log.error(String.format("Subject %s not found", dto.getSubject()));
+                    return new IllegalArgumentException(String.format("Subject %s not found", dto.getSubject()));
+                });
 
         SimpleDateFormat format = new SimpleDateFormat();
         format.applyPattern("yyyy-MM-dd");
@@ -166,7 +171,7 @@ public class TeacherService implements UserInterface {
                         put("pair", schedule.getNumberPair());
                         put("classroom", schedule.getClassroom());
                     }});
-//            scheduleRepository.save(schedule);
+            scheduleRepository.save(schedule);
         }
         return "Changes was added";
     }

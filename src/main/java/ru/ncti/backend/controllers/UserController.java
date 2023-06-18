@@ -17,7 +17,6 @@ import ru.ncti.backend.dto.ScheduleDTO;
 import ru.ncti.backend.dto.UserViewDTO;
 import ru.ncti.backend.service.UserService;
 
-import javax.websocket.server.PathParam;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -60,8 +59,8 @@ public class UserController {
     }
 
     @GetMapping("/users")
-    public ResponseEntity<List<UserViewDTO>> getUsers(@PathParam("type") String type) {
-        return ResponseEntity.status(HttpStatus.OK).body(userService.getUsers(type));
+    public ResponseEntity<List<UserViewDTO>> getUsers() {
+        return ResponseEntity.status(HttpStatus.OK).body(userService.getUsers());
     }
 
     @GetMapping("/users/{id}")

@@ -44,6 +44,8 @@ import static ru.ncti.backend.dto.RabbitQueue.UPDATE_SCHEDULE;
 @RequiredArgsConstructor
 public class FirebaseService {
 
+    // TODO: change all
+
     private final ChatRepository chatRepository;
     private final UserRepository userRepository;
     private final PrivateChatRepository privateChatRepository;
