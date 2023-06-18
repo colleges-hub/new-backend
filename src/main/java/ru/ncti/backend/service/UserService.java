@@ -240,12 +240,10 @@ public class UserService {
 
     public String addFCMToken(FcmDTO dto) {
         var auth = SecurityContextHolder.getContext().getAuthentication();
-        User currentUser = (User) auth.getPrincipal();
+        User user = (User) auth.getPrincipal();
 
-        log.info(dto.getToken());
-        log.info(currentUser.getUsername());
-
-        redisService.setValueSet(String.format("device:%s", currentUser.getUsername()), dto.getToken());
+        user.setDeviceId(dto.getToken());
+        userRepository.save(user);
 
         return "Token was added";
     }

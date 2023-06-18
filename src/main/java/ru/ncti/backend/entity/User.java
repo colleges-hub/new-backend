@@ -56,7 +56,10 @@ public class User implements UserDetails {
 
     @Column(name = "password")
     private String password;
-    
+
+    @Column(name = "deviceId")
+    private String deviceId;
+
     @Column(nullable = false)
     private Boolean isAccountNonExpired = true;
     @Column(nullable = false)
