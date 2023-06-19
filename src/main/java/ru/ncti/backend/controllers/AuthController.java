@@ -7,11 +7,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import ru.ncti.backend.dto.AuthDTO;
-import ru.ncti.backend.dto.FcmDTO;
 import ru.ncti.backend.service.AuthService;
 
 import javax.servlet.http.HttpServletRequest;
-import java.io.IOException;
 import java.util.Map;
 
 import static org.springframework.http.HttpStatus.OK;
@@ -34,8 +32,8 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
-    public void logout(@RequestBody FcmDTO fcmDTO) {
-            authService.logout(fcmDTO);
+    public void logout() {
+        authService.logout();
     }
 
     @PostMapping("/refresh")

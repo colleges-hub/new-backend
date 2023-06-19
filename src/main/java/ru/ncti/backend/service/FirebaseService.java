@@ -29,7 +29,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import static ru.ncti.backend.dto.RabbitQueue.FIRST_MESSAGE;
 import static ru.ncti.backend.dto.RabbitQueue.PRIVATE_CHAT_NOTIFICATION;
 import static ru.ncti.backend.dto.RabbitQueue.PUBLIC_CHAT_NOTIFICATION;
 import static ru.ncti.backend.dto.RabbitQueue.UPDATE_SCHEDULE;
@@ -63,7 +62,6 @@ public class FirebaseService {
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
         Set<User> usersInChat = chat.getUsers();
-        Set<User> users = new HashSet<>(usersInChat);
 
         Set<String> onlineUserEmails = redisService.getValueSet(map.get("chat"));
         Set<User> userOnline = onlineUserEmails.stream()
@@ -71,39 +69,34 @@ public class FirebaseService {
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .collect(Collectors.toSet());
-        userOnline.add(user);
 
-        // Users offline
-        users.removeAll(userOnline);
+        if (userOnline.size() != usersInChat.size()) {
+            // Users offline
+            Set<User> userOffline = new HashSet<>(usersInChat);
+            userOffline.removeAll(userOnline);
 
-        Set<String> usernames = users.stream()
-                .map(User::getUsername)
-                .collect(Collectors.toSet());
+            Set<String> fcmTokens = new HashSet<>();
 
-        Set<String> fcmTokens = new HashSet<>();
-
-        for (String username : usernames) {
-            Set<String> deviceTokens = redisService.getValueSet(String.format("device:%s", username));
-            if (deviceTokens != null) {
-                fcmTokens.addAll(deviceTokens);
+            for (User userOff : userOffline) {
+                fcmTokens.add(userOff.getDeviceId());
             }
-        }
 
-        if (!fcmTokens.isEmpty()) {
-            MulticastMessage multicastMessage = MulticastMessage.builder()
-                    .addAllTokens(fcmTokens)
-                    .setNotification(Notification.builder()
-                            .setTitle(String.format("Чат: %s", chat.getName()))
-                            .setBody(String.format("%s: %s", user.getFirstname(), map.get("text")))
-                            .build())
-                    .putData("page", "ChatRoute")
-                    .putData("chat", objectMapper.writeValueAsString(ChatViewDTO.builder()
-                            .type("PUBLIC")
-                            .name(chat.getName())
-                            .id(chat.getId())
-                            .build()))
-                    .build();
-            firebaseMessaging.sendMulticast(multicastMessage);
+            if (!fcmTokens.isEmpty()) {
+                MulticastMessage multicastMessage = MulticastMessage.builder()
+                        .addAllTokens(fcmTokens)
+                        .setNotification(Notification.builder()
+                                .setTitle(String.format("Чат: %s", chat.getName()))
+                                .setBody(String.format("%s: %s", user.getFirstname(), map.get("text")))
+                                .build())
+                        .putData("page", "ChatRoute")
+                        .putData("chat", objectMapper.writeValueAsString(ChatViewDTO.builder()
+                                .type("PUBLIC")
+                                .name(chat.getName())
+                                .id(chat.getId())
+                                .build()))
+                        .build();
+                firebaseMessaging.sendMulticast(multicastMessage);
+            }
         }
     }
 
@@ -116,31 +109,25 @@ public class FirebaseService {
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
         Set<User> usersInChat = Set.of(chat.getUser1(), chat.getUser2());
-        Set<User> users = new HashSet<>(usersInChat);
 
         Set<String> onlineUserEmails = redisService.getValueSet(map.get("chat"));
+
         if (onlineUserEmails.size() != 2) {
             Set<User> userOnline = onlineUserEmails.stream()
                     .map(userRepository::findByEmail)
                     .filter(Optional::isPresent)
                     .map(Optional::get)
                     .collect(Collectors.toSet());
-            userOnline.add(user);
 
-            // Users offline
-            users.removeAll(userOnline);
 
-            Set<String> usernames = users.stream()
-                    .map(User::getUsername)
-                    .collect(Collectors.toSet());
+            // User offline
+            Set<User> userOffline = new HashSet<>(usersInChat);
+            userOffline.removeAll(userOnline);
 
             Set<String> fcmTokens = new HashSet<>();
 
-            for (String username : usernames) {
-                Set<String> deviceTokens = redisService.getValueSet(String.format("device:%s", username));
-                if (deviceTokens != null) {
-                    fcmTokens.addAll(deviceTokens);
-                }
+            for (User user1 : userOffline) {
+                fcmTokens.add(user1.getDeviceId());
             }
 
             String name = String.format("%s %s", user.getFirstname(), user.getLastname());
@@ -164,35 +151,8 @@ public class FirebaseService {
         }
     }
 
-    @RabbitListener(queues = FIRST_MESSAGE)
-    public void sendFirstNotifNewChat(Map<String, String> map) throws JsonProcessingException, FirebaseMessagingException {
-        User user = userRepository.findById(Long.valueOf(map.get("user")))
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
-
-
-        Set<String> deviceTokens = redisService.getValueSet(String.format("device:%s", user.getUsername()));
-
-        if (!deviceTokens.isEmpty()) {
-            MulticastMessage multicastMessage = MulticastMessage.builder()
-                    .addAllTokens(deviceTokens)
-                    .setNotification(Notification.builder()
-                            .setTitle(map.get("name"))
-                            .setBody(String.format("%s", map.get("text")))
-                            .build())
-                    .putData("page", "ChatRoute")
-                    .putData("chat", objectMapper.writeValueAsString(ChatViewDTO.builder()
-                            .type("PRIVATE")
-                            .name(map.get("name"))
-                            .id(UUID.fromString(map.get("chat")))
-                            .build()))
-                    .build();
-            firebaseMessaging.sendMulticast(multicastMessage);
-        }
-    }
-
-
     @RabbitListener(queues = UPDATE_SCHEDULE)
-    public void sendNotificationWithChanges(Map<String, ?> map) throws FirebaseMessagingException {
+    public void sendNotificationAboutChanges(Map<String, ?> map) throws FirebaseMessagingException {
         Group group = groupRepository.findByName(map.get("group").toString())
                 .orElseThrow(() -> new IllegalArgumentException("Group not found"));
         List<User> students = userRepository.findAllByGroupOrderByLastname(group);
