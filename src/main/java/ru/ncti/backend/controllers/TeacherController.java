@@ -3,6 +3,7 @@ package ru.ncti.backend.controllers;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -46,6 +47,12 @@ public class TeacherController {
         } catch (ParseException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
+    }
+
+    @PreAuthorize("hasRole('DEANERY')")
+    @GetMapping("/certificate")
+    public ResponseEntity<String> getCertificateList() {
+        return ResponseEntity.status(HttpStatus.OK).body("QQ");
     }
 
 }

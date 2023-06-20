@@ -46,4 +46,7 @@ public class Group {
 
     @OneToMany(mappedBy = "group", fetch = FetchType.LAZY)
     private Set<Schedule> schedules;
+
+    @ManyToOne
+    private Deanery deanery;
 }

@@ -42,4 +42,6 @@ public class WebSocketEventListener {
         log.info(event);
     }
 
+    // todo: handler for event to disconnect
+
 }

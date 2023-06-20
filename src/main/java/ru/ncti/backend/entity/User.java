@@ -81,6 +81,9 @@ public class User implements UserDetails {
     @JoinColumn(name = "group_id")
     private Group group;
 
+    @ManyToOne
+    private Deanery deanery;
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         List<GrantedAuthority> authority = new ArrayList<>();
