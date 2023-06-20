@@ -8,9 +8,7 @@ import org.springframework.stereotype.Service;
 import ru.ncti.backend.repository.UserRepository;
 
 /**
- * Created by IntelliJ IDEA.
- * User: Ivan Chuvilin (@ichuvilin)
- * Date: 26-05-2023
+ * user: ichuvilin
  */
 @Service
 @RequiredArgsConstructor

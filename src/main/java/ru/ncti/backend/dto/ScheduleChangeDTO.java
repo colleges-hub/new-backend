@@ -7,9 +7,7 @@ import lombok.ToString;
 import java.util.List;
 
 /**
- * Created by IntelliJ IDEA.
- * User: Ivan Chuvilin (@ichuvilin)
- * Date: 30-05-2023
+ * user: ichuvilin
  */
 @Getter
 @Setter

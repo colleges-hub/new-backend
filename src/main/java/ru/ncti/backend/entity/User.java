@@ -26,11 +26,8 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Created by IntelliJ IDEA.
- * User: Ivan Chuvilin (@ichuvilin)
- * Date: 26-05-2023
+ * user: ichuvilin
  */
-
 @Getter
 @Setter
 @Entity

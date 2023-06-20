@@ -29,14 +29,12 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import static ru.ncti.backend.dto.RabbitQueue.PRIVATE_CHAT_NOTIFICATION;
-import static ru.ncti.backend.dto.RabbitQueue.PUBLIC_CHAT_NOTIFICATION;
-import static ru.ncti.backend.dto.RabbitQueue.UPDATE_SCHEDULE;
+import static ru.ncti.backend.model.RabbitQueue.PRIVATE_CHAT_NOTIFICATION;
+import static ru.ncti.backend.model.RabbitQueue.PUBLIC_CHAT_NOTIFICATION;
+import static ru.ncti.backend.model.RabbitQueue.UPDATE_SCHEDULE;
 
 /**
- * Created by IntelliJ IDEA.
- * User: Ivan Chuvilin (@ichuvilin)
- * Date: 05-06-2023
+ * user: ichuvilin
  */
 @Service
 @Log4j

@@ -7,9 +7,7 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 /**
- * Created by IntelliJ IDEA.
- * User: Ivan Chuvilin (@ichuvilin)
- * Date: 20-06-2023
+ * user: ichuvilin
  */
 @Entity
 @Table(name = "deanery")

@@ -19,9 +19,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Created by IntelliJ IDEA.
- * User: Ivan Chuvilin (@ichuvilin)
- * Date: 27-05-2023
+ * user: ichuvilin
  */
 @RestController
 @RequiredArgsConstructor

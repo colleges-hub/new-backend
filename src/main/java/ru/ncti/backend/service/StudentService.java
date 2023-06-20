@@ -31,9 +31,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * Created by IntelliJ IDEA.
- * User: Ivan Chuvilin (@ichuvilin)
- * Date: 27-05-2023
+ * user: ichuvilin
  */
 @Log4j
 @Service
@@ -62,6 +60,10 @@ public class StudentService {
         return getSchedule(student);
     }
 
+    public void orderCertificate() {
+
+    }
+
     private Map<String, Set<ScheduleDTO>> getSchedule(User student) {
         Map<String, Set<ScheduleDTO>> map = new HashMap<>();
 
@@ -70,7 +72,7 @@ public class StudentService {
         for (ScheduleDTO s : currSample) {
             map.computeIfAbsent(s.getDay(), k -> new HashSet<>()).add(s);
         }
-        
+
         List<Schedule> sch = scheduleRepository.findLatestScheduleForGroup(student.getGroup().getId());
 
         if (!sch.isEmpty()) {

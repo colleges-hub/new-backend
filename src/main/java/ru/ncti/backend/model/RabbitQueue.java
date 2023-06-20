@@ -1,11 +1,8 @@
-package ru.ncti.backend.dto;
+package ru.ncti.backend.model;
 
 /**
- * Created by IntelliJ IDEA.
- * User: Ivan Chuvilin (@ichuvilin)
- * Date: 03-06-2023
+ * user: ichuvilin
  */
-
 public class RabbitQueue {
     public static final String EMAIL_UPDATE = "email_update";
     public static final String PUBLIC_CHAT_NOTIFICATION = "public_chat_notification";

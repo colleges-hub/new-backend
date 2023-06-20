@@ -10,9 +10,7 @@ import ru.ncti.backend.entity.Role;
 import java.util.Set;
 
 /**
- * Created by IntelliJ IDEA.
- * User: Ivan Chuvilin (@ichuvilin)
- * Date: 27-05-2023
+ * user: ichuvilin
  */
 @Getter
 @Setter

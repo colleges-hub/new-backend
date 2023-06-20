@@ -8,9 +8,7 @@ import org.springframework.context.annotation.Configuration;
 import javax.sql.DataSource;
 
 /**
- * Created by IntelliJ IDEA.
- * User: Ivan Chuvilin (@ichuvilin)
- * Date: 27-05-2023
+ * user: ichuvilin
  */
 @Configuration
 public class FlywayConfig {

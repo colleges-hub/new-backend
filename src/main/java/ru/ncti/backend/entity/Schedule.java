@@ -22,9 +22,7 @@ import javax.persistence.TemporalType;
 import java.util.Date;
 
 /**
- * Created by IntelliJ IDEA.
- * User: Ivan Chuvilin (@ichuvilin)
- * Date: 26-05-2023
+ * user: ichuvilin
  */
 @Getter
 @Setter

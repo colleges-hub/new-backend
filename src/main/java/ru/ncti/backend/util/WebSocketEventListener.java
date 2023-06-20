@@ -11,9 +11,7 @@ import ru.ncti.backend.service.RedisService;
 import java.util.Objects;
 
 /**
- * Created by IntelliJ IDEA.
- * User: Ivan Chuvilin (@ichuvilin)
- * Date: 01-06-2023
+ * user: ichuvilin
  */
 @Log4j
 @Component

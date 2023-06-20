@@ -39,12 +39,10 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static ru.ncti.backend.dto.RabbitQueue.UPDATE_SCHEDULE;
+import static ru.ncti.backend.model.RabbitQueue.UPDATE_SCHEDULE;
 
 /**
- * Created by IntelliJ IDEA.
- * User: Ivan Chuvilin (@ichuvilin)
- * Date: 27-05-2023
+ * user: ichuvilin
  */
 @Log4j
 @Service

@@ -12,9 +12,7 @@ import org.springframework.core.io.ClassPathResource;
 import java.io.IOException;
 
 /**
- * Created by IntelliJ IDEA.
- * User: Ivan Chuvilin (@ichuvilin)
- * Date: 05-06-2023
+ * user: ichuvilin
  */
 @Configuration
 @RequiredArgsConstructor

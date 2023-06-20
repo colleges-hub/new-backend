@@ -7,9 +7,7 @@ import lombok.Setter;
 import java.util.Map;
 
 /**
- * Created by IntelliJ IDEA.
- * User: Ivan Chuvilin (@ichuvilin)
- * Date: 12-06-2023
+ * user: ichuvilin
  */
 @Getter
 @Setter

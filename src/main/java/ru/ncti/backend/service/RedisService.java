@@ -7,9 +7,7 @@ import org.springframework.stereotype.Component;
 import java.util.Set;
 
 /**
- * Created by IntelliJ IDEA.
- * User: Ivan Chuvilin (@ichuvilin)
- * Date: 01-06-2023
+ * user: ichuvilin
  */
 @Component
 @RequiredArgsConstructor

@@ -8,11 +8,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 /**
- * Created by IntelliJ IDEA.
- * User: Ivan Chuvilin (@ichuvilin)
- * Date: 26-05-2023
+ * user: ichuvilin
  */
-
 @Getter
 @Setter
 @Builder

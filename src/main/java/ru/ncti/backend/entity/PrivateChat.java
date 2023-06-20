@@ -17,9 +17,7 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Created by IntelliJ IDEA.
- * User: Ivan Chuvilin (@ichuvilin)
- * Date: 10-06-2023
+ * user: ichuvilin
  */
 @Setter
 @Getter

@@ -47,14 +47,11 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
-import static ru.ncti.backend.dto.RabbitQueue.EMAIL_UPDATE;
+import static ru.ncti.backend.model.RabbitQueue.EMAIL_UPDATE;
 
 /**
- * Created by IntelliJ IDEA.
- * User: Ivan Chuvilin (@ichuvilin)
- * Date: 26-05-2023
+ * user: ichuvilin
  */
-
 @Service
 @RequiredArgsConstructor
 @Log4j

@@ -15,9 +15,7 @@ import java.util.Map;
 import static org.springframework.http.HttpStatus.OK;
 
 /**
- * Created by IntelliJ IDEA.
- * User: Ivan Chuvilin (@ichuvilin)
- * Date: 26-05-2023
+ * user: ichuvilin
  */
 @RestController
 @RequiredArgsConstructor

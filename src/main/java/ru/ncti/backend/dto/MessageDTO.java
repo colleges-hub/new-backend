@@ -5,9 +5,7 @@ import lombok.Setter;
 import lombok.ToString;
 
 /**
- * Created by IntelliJ IDEA.
- * User: Ivan Chuvilin (@ichuvilin)
- * Date: 28-05-2023
+ * user: ichuvilin
  */
 @Getter
 @Setter

@@ -31,15 +31,12 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import static ru.ncti.backend.dto.RabbitQueue.PRIVATE_CHAT_NOTIFICATION;
-import static ru.ncti.backend.dto.RabbitQueue.PUBLIC_CHAT_NOTIFICATION;
+import static ru.ncti.backend.model.RabbitQueue.PRIVATE_CHAT_NOTIFICATION;
+import static ru.ncti.backend.model.RabbitQueue.PUBLIC_CHAT_NOTIFICATION;
 
 /**
- * Created by IntelliJ IDEA.
- * User: Ivan Chuvilin (@ichuvilin)
- * Date: 28-05-2023
+ * user: ichuvilin
  */
-
 @Log4j
 @Service
 @RequiredArgsConstructor

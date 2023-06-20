@@ -17,11 +17,8 @@ import ru.ncti.backend.security.UserDetailsServiceImpl;
 import ru.ncti.backend.security.filters.JwtRequestFilter;
 
 /**
- * Created by IntelliJ IDEA.
- * User: Ivan Chuvilin (@ichuvilin)
- * Date: 26-05-2023
+ * user: ichuvilin
  */
-
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
