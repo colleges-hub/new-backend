@@ -14,11 +14,11 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import ru.ncti.backend.dto.AddUserDTO;
-import ru.ncti.backend.dto.ChatDTO;
-import ru.ncti.backend.dto.ChatViewDTO;
-import ru.ncti.backend.dto.MessageDTO;
-import ru.ncti.backend.dto.MessageFromChatDTO;
+import ru.ncti.backend.api.request.ChatRequest;
+import ru.ncti.backend.api.request.MessageRequest;
+import ru.ncti.backend.api.response.MessageResponse;
+import ru.ncti.backend.api.response.ViewChatResponse;
+import ru.ncti.backend.api.request.UsersRequest;
 import ru.ncti.backend.service.ChatService;
 
 import java.security.Principal;
@@ -39,7 +39,7 @@ public class ChatController {
 
 
     @GetMapping()
-    public ResponseEntity<List<ChatViewDTO>> getChatsFromUser() {
+    public ResponseEntity<List<ViewChatResponse>> getChatsFromUser() {
         return ResponseEntity.status(HttpStatus.OK).body(chatService.getChatsFromUser());
     }
 
@@ -49,30 +49,29 @@ public class ChatController {
     }
 
     @PostMapping("/{chatId}")
-    public ResponseEntity<String> addUsersToChat(@PathVariable("chatId") UUID id, @RequestBody AddUserDTO dto) {
+    public ResponseEntity<String> addUsersToChat(@PathVariable("chatId") UUID id, @RequestBody UsersRequest dto) {
         return ResponseEntity.status(HttpStatus.OK).body(chatService.addUsersToChats(id, dto));
     }
 
     @PostMapping("/create-public")
-    public ResponseEntity<String> createPublicChat(@RequestBody ChatDTO dto) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(chatService.createPublicChat(dto));
+    public ResponseEntity<String> createPublicChat(@RequestBody ChatRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(chatService.createPublicChat(request));
     }
 
     @GetMapping("/{chatId}")
-    public ResponseEntity<List<MessageFromChatDTO>> getChatMessages(@PathVariable("chatId") UUID id, @Payload("type") String type) {
-        log.info(type);
+    public ResponseEntity<List<MessageResponse>> getChatMessages(@PathVariable("chatId") UUID id, @Payload("type") String type) {
         return ResponseEntity.status(HttpStatus.OK).body(chatService.getMessageFromChat(id, type));
     }
 
     @MessageMapping("/{chatId}/chat")
-    public void handlePublicMessage(@DestinationVariable("chatId") UUID id, MessageDTO message, Principal principal) {
-        MessageFromChatDTO mes = chatService.sendToPublic(id, message, principal);
+    public void handlePublicMessage(@DestinationVariable("chatId") UUID id, MessageRequest message, Principal principal) {
+        MessageResponse mes = chatService.sendToPublic(id, message, principal);
         simpMessagingTemplate.convertAndSend("/topic/public/" + id, mes);
     }
 
     @MessageMapping("/{chatId}/{user}")
-    public void handlePrivateMessage(@DestinationVariable("chatId") UUID id, @DestinationVariable("user") String user, MessageDTO message, Principal principal) {
-        MessageFromChatDTO mes = chatService.sendToPrivate(id, user, message, principal);
+    public void handlePrivateMessage(@DestinationVariable("chatId") UUID id, @DestinationVariable("user") String user, MessageRequest message, Principal principal) {
+        MessageResponse mes = chatService.sendToPrivate(id, user, message, principal);
         simpMessagingTemplate.convertAndSend("/topic/private/" + id, mes);
     }
 }

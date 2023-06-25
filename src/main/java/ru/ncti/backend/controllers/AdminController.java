@@ -9,23 +9,22 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
-import ru.ncti.backend.dto.GroupDTO;
-import ru.ncti.backend.dto.ResetPasswordDTO;
-import ru.ncti.backend.dto.SampleDTO;
-import ru.ncti.backend.dto.ScheduleDTO;
-import ru.ncti.backend.dto.SpecialityDTO;
-import ru.ncti.backend.dto.StudentDTO;
-import ru.ncti.backend.dto.SubjectDTO;
-import ru.ncti.backend.dto.UserDTO;
-import ru.ncti.backend.entity.Group;
-import ru.ncti.backend.entity.Subject;
-import ru.ncti.backend.entity.User;
+import ru.ncti.backend.api.request.AuthRequest;
+import ru.ncti.backend.api.request.GroupRequest;
+import ru.ncti.backend.api.request.SpecialityRequest;
+import ru.ncti.backend.api.request.SubjectRequest;
+import ru.ncti.backend.api.request.TemplateRequest;
+import ru.ncti.backend.api.request.UserRequest;
+import ru.ncti.backend.api.response.GroupResponse;
+import ru.ncti.backend.api.response.ScheduleResponse;
+import ru.ncti.backend.api.response.UserResponse;
+import ru.ncti.backend.model.Group;
+import ru.ncti.backend.model.Subject;
 import ru.ncti.backend.service.AdminService;
 
 import java.io.IOException;
@@ -42,70 +41,52 @@ public class AdminController {
     private final AdminService adminService;
 
     @GetMapping("/profile")
-    public ResponseEntity<UserDTO> getProfile() {
+    public ResponseEntity<UserResponse> getProfile() {
         return ResponseEntity.status(HttpStatus.OK).body(adminService.getProfile());
     }
 
+    // todo: think
     @PatchMapping("/update")
-    public ResponseEntity<UserDTO> updateProfile(@RequestBody UserDTO dto) {
+    public ResponseEntity<String> updateProfile(@RequestBody AuthRequest dto) {
         return ResponseEntity.status(HttpStatus.OK).body(adminService.updateProfile(dto));
     }
 
-    @PostMapping("/create-student")
-    public ResponseEntity<String> createStudent(@RequestBody StudentDTO dto) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(adminService.createStudent(dto));
+    @PostMapping("/create-user")
+    public ResponseEntity<String> createStudent(@RequestBody UserRequest dto) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(adminService.createUser(dto));
     }
 
-    @PostMapping("/create-teacher")
-    public ResponseEntity<String> createTeacher(@RequestBody UserDTO dto) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(adminService.createTeacher(dto));
+    @PostMapping("/upload-users")
+    public ResponseEntity<String> uploadStudents(@RequestParam("file") MultipartFile file) {
+        try {
+            return ResponseEntity.status(HttpStatus.OK).body(adminService.uploadUsers(file));
+        } catch (IOException | CsvValidationException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
     }
 
     @PostMapping("/create-speciality")
-    public ResponseEntity<String> createSpeciality(@RequestBody SpecialityDTO dto) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(adminService.createSpeciality(dto));
-    }
-
-    @PostMapping("/schedule")
-    public ResponseEntity<String> createSchedule(@RequestBody SampleDTO dto) {
-        return ResponseEntity.status(HttpStatus.OK).body(adminService.createSchedule(dto));
+    public ResponseEntity<String> createSpeciality(@RequestBody SpecialityRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(adminService.createSpeciality(request));
     }
 
     @PostMapping("/create-group")
-    public ResponseEntity<String> createGroup(@RequestBody GroupDTO dto) {
+    public ResponseEntity<String> createGroup(@RequestBody GroupRequest request) {
         try {
-            return ResponseEntity.status(HttpStatus.CREATED).body(adminService.createGroup(dto));
+            return ResponseEntity.status(HttpStatus.CREATED).body(adminService.createGroup(request));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
     }
 
-    @PostMapping("/create-sample")
-    public ResponseEntity<String> createSample(@RequestBody SampleDTO dto) {
-        return ResponseEntity.status(HttpStatus.OK).body(adminService.createSample(dto));
+    @PostMapping("/create-template")
+    public ResponseEntity<String> createTemplate(@RequestBody TemplateRequest request) {
+        return ResponseEntity.status(HttpStatus.OK).body(adminService.createTemplate(request));
     }
 
     @PostMapping("/create-subject")
-    public ResponseEntity<String> createSubject(@RequestBody SubjectDTO dto) {
-        return ResponseEntity.status(HttpStatus.OK).body(adminService.createSubject(dto));
-    }
-
-    @PostMapping("/upload-students")
-    public ResponseEntity<String> uploadStudents(@RequestParam("file") MultipartFile file) {
-        try {
-            return ResponseEntity.status(HttpStatus.OK).body(adminService.uploadStudents(file));
-        } catch (IOException | CsvValidationException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        }
-    }
-
-    @PostMapping("/upload-teachers")
-    public ResponseEntity<String> uploadTeacher(@RequestParam("file") MultipartFile file) {
-        try {
-            return ResponseEntity.status(HttpStatus.OK).body(adminService.uploadTeacher(file));
-        } catch (IOException | CsvValidationException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        }
+    public ResponseEntity<String> createSubject(@RequestBody SubjectRequest request) {
+        return ResponseEntity.status(HttpStatus.OK).body(adminService.createSubject(request));
     }
 
     @PostMapping("/upload-schedule")
@@ -118,32 +99,27 @@ public class AdminController {
     }
 
     @PostMapping("/change-schedule")
-    public ResponseEntity<?> changeSchedule(@RequestBody ScheduleDTO dto) {
+    public ResponseEntity<?> changeSchedule(@RequestBody ScheduleResponse dto) {
         return ResponseEntity.status(HttpStatus.OK).body(adminService.changeSchedule(dto));
     }
 
     @GetMapping("/students")
-    public ResponseEntity<List<User>> getStudents(@RequestParam("group") Long group) {
+    public ResponseEntity<List<UserResponse>> getStudents(@RequestParam("group") Long group) {
         return ResponseEntity.status(HttpStatus.OK).body(adminService.getStudentsByGroup(group));
     }
 
     @GetMapping("/teachers")
-    public ResponseEntity<List<User>> getTeachers() {
+    public ResponseEntity<List<UserResponse>> getTeachers() {
         return ResponseEntity.status(HttpStatus.OK).body(adminService.getTeachers());
     }
 
     @GetMapping("/groups")
-    public ResponseEntity<List<Group>> getGroups() {
+    public ResponseEntity<List<GroupResponse>> getGroups() {
         return ResponseEntity.status(HttpStatus.OK).body(adminService.getGroups());
     }
 
-    @GetMapping("/students/{id}")
-    public ResponseEntity<User> getStudentById(@PathVariable("id") Long id) {
-        return ResponseEntity.status(HttpStatus.OK).body(adminService.getUserById(id));
-    }
-
-    @GetMapping("/teachers/{id}")
-    public ResponseEntity<User> getTeacherById(@PathVariable("id") Long id) {
+    @GetMapping("/user/{id}")
+    public ResponseEntity<UserResponse> getUserById(@PathVariable("id") Long id) {
         return ResponseEntity.status(HttpStatus.OK).body(adminService.getUserById(id));
     }
 
@@ -177,9 +153,9 @@ public class AdminController {
         return ResponseEntity.status(HttpStatus.OK).body(adminService.deleteGroupById(id));
     }
 
-    @PutMapping("/reset")
-    public ResponseEntity<?> resetPassword(@RequestBody ResetPasswordDTO dto) {
-        return ResponseEntity.status(HttpStatus.OK).body(adminService.resetPasswordForUserById(dto));
+    @PatchMapping("/reset")
+    public ResponseEntity<?> resetPassword(@RequestParam("id") Long id, @RequestBody AuthRequest request) {
+        return ResponseEntity.status(HttpStatus.OK).body(adminService.updateCredentialUserById(id, request));
     }
 
 }

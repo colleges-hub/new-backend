@@ -11,23 +11,26 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
-import ru.ncti.backend.dto.GroupDTO;
-import ru.ncti.backend.dto.ResetPasswordDTO;
-import ru.ncti.backend.dto.SampleDTO;
-import ru.ncti.backend.dto.SampleUploadDTO;
-import ru.ncti.backend.dto.ScheduleDTO;
-import ru.ncti.backend.dto.SpecialityDTO;
-import ru.ncti.backend.dto.StudentDTO;
-import ru.ncti.backend.dto.SubjectDTO;
-import ru.ncti.backend.dto.UserDTO;
-import ru.ncti.backend.entity.Group;
-import ru.ncti.backend.entity.Role;
-import ru.ncti.backend.entity.Sample;
-import ru.ncti.backend.entity.Speciality;
-import ru.ncti.backend.entity.Subject;
-import ru.ncti.backend.entity.User;
-import ru.ncti.backend.model.Email;
+import ru.ncti.backend.api.request.AuthRequest;
+import ru.ncti.backend.api.request.GroupRequest;
+import ru.ncti.backend.api.request.SpecialityRequest;
+import ru.ncti.backend.api.request.SubjectRequest;
+import ru.ncti.backend.api.request.TemplateRequest;
+import ru.ncti.backend.api.request.UploadTemplateRequest;
+import ru.ncti.backend.api.request.UploadUserRequest;
+import ru.ncti.backend.api.request.UserRequest;
+import ru.ncti.backend.api.response.EmailResponse;
+import ru.ncti.backend.api.response.GroupResponse;
+import ru.ncti.backend.api.response.ScheduleResponse;
+import ru.ncti.backend.api.response.UserResponse;
+import ru.ncti.backend.model.Group;
+import ru.ncti.backend.model.Role;
+import ru.ncti.backend.model.Sample;
+import ru.ncti.backend.model.Speciality;
+import ru.ncti.backend.model.Subject;
+import ru.ncti.backend.model.User;
 import ru.ncti.backend.repository.GroupRepository;
 import ru.ncti.backend.repository.RoleRepository;
 import ru.ncti.backend.repository.SampleRepository;
@@ -41,13 +44,15 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.temporal.WeekFields;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
-import static ru.ncti.backend.model.RabbitQueue.EMAIL_UPDATE;
+import static ru.ncti.backend.config.RabbitConfig.EMAIL_UPDATE;
+
 
 /**
  * user: ichuvilin
@@ -67,143 +72,123 @@ public class AdminService {
     private final SampleRepository sampleRepository;
     private final RabbitTemplate rabbitTemplate;
 
-    public UserDTO getProfile() {
+    public UserResponse getProfile() {
         var auth = SecurityContextHolder.getContext().getAuthentication();
         User user = (User) auth.getPrincipal();
-        return convert(user, UserDTO.class);
+        UserResponse response = convert(user, UserResponse.class);
+        response.setRole(user.getRoles());
+        return response;
     }
 
-    public UserDTO updateProfile(UserDTO dto) {
+    public String updateProfile(AuthRequest dto) {
         var auth = SecurityContextHolder.getContext().getAuthentication();
         User user = (User) auth.getPrincipal();
 
-        if (dto.getFirstname() != null) {
-            user.setFirstname(dto.getFirstname());
-        }
-        if (dto.getLastname() != null) {
-            user.setLastname(dto.getLastname());
-        }
-        if (dto.getSurname() != null) {
-            user.setSurname(dto.getSurname());
-        }
-        if (dto.getEmail() != null) {
-            user.setEmail(dto.getEmail());
+        if (dto.getUsername() != null) {
+            user.setEmail(dto.getUsername());
         }
         if (dto.getPassword() != null) {
             user.setPassword(passwordEncoder.encode(dto.getPassword()));
         }
 
         userRepository.save(user);
-        return convert(user, UserDTO.class);
+        return "Data updated";
     }
 
-    public String createStudent(StudentDTO dto) {
-        User student = convert(dto, User.class);
-        Role role = roleRepository.findByName("ROLE_STUDENT")
-                .orElseThrow(() -> {
-                    log.error("ROLE_STUDENT not found");
-                    return new IllegalArgumentException("ROLE_STUDENT not found");
-                });
-        Group group = groupRepository.findByName(dto.getGroup())
-                .orElseThrow(() -> {
-                    log.error(String.format("Group %s not found", dto.getGroup()));
-                    return new IllegalArgumentException("Group not found");
-                });
-        student.setGroup(group);
-        student.setPassword(passwordEncoder.encode(dto.getPassword()));
-        student.setRoles(Set.of(role));
+    @Transactional(readOnly = false)
+    public String createUser(UserRequest dto) {
+        User user = convert(dto, User.class);
+        Set<Role> roles = new HashSet<>(dto.getRole().size());
+        for (String role : dto.getRole()) {
+            Role rl = roleRepository.findByDescription(role)
+                    .orElseThrow(() -> new IllegalArgumentException(String.format("Role %s not found", role)));
+            roles.add(rl);
+        }
+        if (dto.getGroup() != null) {
+            if (!dto.getGroup().isEmpty()) {
+                Group group = groupRepository.findByName(dto.getGroup())
+                        .orElseThrow(() -> new IllegalArgumentException(String.format("Group %s not found", dto.getGroup())));
+                user.setGroup(group);
+            }
+        }
 
-        userRepository.save(student);
-
-        createEmailNotification(student, dto.getPassword());
-
-        return "Студент успешно добавлен";
+        user.setRoles(roles);
+        user.setPassword(passwordEncoder.encode(dto.getPassword()));
+        userRepository.save(user);
+        createEmailNotification(user, dto.getPassword());
+        return "User was added";
     }
 
-    public String createTeacher(UserDTO dto) {
-        User teacher = convert(dto, User.class);
-        Role role = roleRepository.findByName("ROLE_TEACHER")
-                .orElseThrow(() -> {
-                    log.error("ROLE_TEACHER not found");
-                    return new IllegalArgumentException("ROLE_TEACHER not found");
-                });
-        teacher.setRoles(Set.of(role));
-        teacher.setPassword(passwordEncoder.encode(dto.getPassword()));
-
-        userRepository.save(teacher);
-
-        createEmailNotification(teacher, dto.getPassword());
-
-        return "Преподаватель успешно добавлен";
-    }
-
-    public String createSpeciality(SpecialityDTO dto) {
+    public String createSpeciality(SpecialityRequest dto) {
         if (specialityRepository.findById(dto.getId()).isPresent()) {
             log.error(String.format("Speciality %s already exist", dto.getName()));
             throw new IllegalArgumentException(String.format("Speciality %s already exist", dto.getName()));
         }
         specialityRepository.save(convert(dto, Speciality.class));
-        return "Специальность успешно добавлена";
+        return "Speciality was added";
     }
 
-    public String createGroup(GroupDTO dto) {
-        if (groupRepository.findByName(dto.getName()).isPresent()) {
-            log.error(String.format("Group %s already exist", dto.getName()));
-            throw new IllegalArgumentException(String.format("Group %s already exist", dto.getName()));
+    public String createGroup(GroupRequest request) {
+        if (groupRepository.findByName(request.getName()).isPresent()) {
+            log.error(String.format("Group %s already exist", request.getName()));
+            throw new IllegalArgumentException(String.format("Group %s already exist", request.getName()));
         }
-        Group group = convert(dto, Group.class);
+        Group group = convert(request, Group.class);
         groupRepository.save(group);
         return "Группа успешно создана";
     }
 
-    public String createSample(SampleDTO dto) {
-        Group g = groupRepository.findById(dto.getGroup())
+    public String createTemplate(TemplateRequest request) {
+        Group g = groupRepository.findById(request.getGroup())
                 .orElseThrow(() -> {
-                    log.error(String.format("Group %d already exist", dto.getGroup()));
-                    return new IllegalArgumentException(String.format("Group %d already exist", dto.getGroup()));
+                    log.error(String.format("Group %d already exist", request.getGroup()));
+                    return new IllegalArgumentException(String.format("Group %d already exist", request.getGroup()));
                 });
-        User teacher = userRepository.findById(dto.getTeacher())
+        User teacher = userRepository.findById(request.getTeacher())
                 .orElseThrow(() -> {
-                    log.error(String.format("Teacher %d already exist", dto.getTeacher()));
-                    return new IllegalArgumentException(String.format("Teacher %d already exist", dto.getTeacher()));
+                    log.error(String.format("Teacher %d already exist", request.getTeacher()));
+                    return new IllegalArgumentException(String.format("Teacher %d already exist", request.getTeacher()));
                 });
-        Subject subject = subjectRepository.findById(dto.getSubject())
+        Subject subject = subjectRepository.findById(request.getSubject())
                 .orElseThrow(() -> {
-                    log.error(String.format("Subject %d already exist", dto.getSubject()));
-                    return new IllegalArgumentException(String.format("Subject %d already exist", dto.getSubject()));
+                    log.error(String.format("Subject %d already exist", request.getSubject()));
+                    return new IllegalArgumentException(String.format("Subject %d already exist", request.getSubject()));
                 });
 
         Sample sample = Sample.builder()
-                .day(dto.getDay())
+                .day(request.getDay())
                 .group(g)
-                .numberPair(dto.getNumberPair())
+                .numberPair(request.getNumberPair())
                 .teacher(teacher)
                 .subject(subject)
-                .classroom(dto.getClassroom())
-                .parity(dto.getParity())
+                .classroom(request.getClassroom())
+                .parity(request.getParity())
                 .build();
         sampleRepository.save(sample);
-        return "OK";
+        return "Template was added";
     }
 
-    public String createSubject(SubjectDTO dto) {
-        if (subjectRepository.findByName(dto.getName()).isPresent()) {
-            log.error(String.format("Subject %s already exist", dto.getName()));
-            throw new IllegalArgumentException(String.format("Subject %s already exist", dto.getName()));
+    public String createSubject(SubjectRequest request) {
+        if (subjectRepository.findByName(request.getName()).isPresent()) {
+            log.error(String.format("Subject %s already exist", request.getName()));
+            throw new IllegalArgumentException(String.format("Subject %s already exist", request.getName()));
         }
-        subjectRepository.save(convert(dto, Subject.class));
-        return "Предмет успешно добавлен";
+        subjectRepository.save(convert(request, Subject.class));
+        return "Subject was added";
     }
 
-    public String uploadStudents(MultipartFile file) throws IOException, CsvValidationException {
+    @Transactional(readOnly = false)
+    public String uploadUsers(MultipartFile file) throws IOException, CsvValidationException {
         CSVReader csvReader = new CSVReader(new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8));
-        List<StudentDTO> students = new CsvToBeanBuilder<StudentDTO>(csvReader)
-                .withType(StudentDTO.class).build().parse();
+        List<UploadUserRequest> users = new CsvToBeanBuilder<UploadUserRequest>(csvReader)
+                .withType(UploadUserRequest.class).build().parse();
 
-        List<CompletableFuture<Void>> futures = students.stream()
-                .map(student -> CompletableFuture.runAsync(() -> {
+        List<CompletableFuture<Void>> futures = users.stream()
+                .map(user -> CompletableFuture.runAsync(() -> {
                     try {
-                        createStudent(student);
+                        UserRequest usr = convert(user, UserRequest.class);
+                        usr.setRole(List.of(user.getRole()));
+                        createUser(usr);
                     } catch (IllegalArgumentException e) {
                         log.error(e);
                         throw new IllegalArgumentException(e);
@@ -213,38 +198,13 @@ public class AdminService {
         CompletableFuture<Void> allFutures = CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
         allFutures.join();
         csvReader.close();
-        log.info("Uploaded students");
-        return "Uploaded students";
-    }
-
-    public String uploadTeacher(MultipartFile file) throws IOException, CsvValidationException {
-        CSVReader csvReader = new CSVReader(new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8));
-        List<UserDTO> teachers = new CsvToBeanBuilder<UserDTO>(csvReader)
-                .withType(UserDTO.class).build().parse();
-
-        List<CompletableFuture<Void>> futures = teachers.stream()
-                .map(teacher -> CompletableFuture.runAsync(() -> {
-                    try {
-                        createTeacher(teacher);
-                    } catch (IllegalArgumentException e) {
-                        log.error(e);
-                        throw new IllegalArgumentException(e);
-                    }
-                }))
-                .toList();
-
-        CompletableFuture<Void> allFutures = CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
-        allFutures.join();
-        csvReader.close();
-
-        log.info("Uploaded teachers");
-        return "Uploaded teachers";
+        return "Uploaded users";
     }
 
     public String uploadSchedule(MultipartFile file) throws IOException {
         CSVReader csvReader = new CSVReader(new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8));
-        List<SampleUploadDTO> schedule = new CsvToBeanBuilder<SampleUploadDTO>(csvReader)
-                .withType(SampleUploadDTO.class).build().parse();
+        List<UploadTemplateRequest> schedule = new CsvToBeanBuilder<UploadTemplateRequest>(csvReader)
+                .withType(UploadTemplateRequest.class).build().parse();
 
         List<CompletableFuture<Void>> futures = schedule.stream()
                 .map(s -> CompletableFuture.runAsync(() -> {
@@ -273,34 +233,59 @@ public class AdminService {
         allFutures.join();
         csvReader.close();
 
-        log.info("Uploaded schedule");
         return "Uploaded schedule";
     }
 
-    public List<User> getStudentsByGroup(Long group) {
+    public List<UserResponse> getStudentsByGroup(Long group) {
         Group g = groupRepository.findById(group).orElseThrow(() -> {
             log.error(String.format("Group %s not found", group));
             return new IllegalArgumentException("Group not found");
         });
-        return userRepository.findAllByGroupOrderByLastname(g);
+        return userRepository.findAllByGroupOrderByLastname(g)
+                .stream().map(student -> UserResponse.builder()
+                        .id(student.getId())
+                        .firstname(student.getFirstname())
+                        .lastname(student.getLastname())
+                        .surname(student.getSurname())
+                        .email(student.getEmail())
+                        .role(student.getRoles())
+                        .build()).toList();
     }
 
-    public List<User> getTeachers() {
-        Role role = roleRepository.findByName("ROLE_TEACHER").orElse(null);
-        return userRepository.findAllByRoles(role);
+    public List<UserResponse> getTeachers() {
+        Role role = roleRepository.findByName("ROLE_TEACHER")
+                .orElseThrow(() -> new IllegalArgumentException("Role not found"));
+        return userRepository.findAllByRoles(role)
+                .stream().map(user -> UserResponse.builder()
+                        .id(user.getId())
+                        .firstname(user.getFirstname())
+                        .lastname(user.getLastname())
+                        .surname(user.getSurname())
+                        .email(user.getEmail())
+                        .role(user.getRoles())
+                        .build()).toList();
     }
 
-    public List<Group> getGroups() {
-        return groupRepository.findAll();
+    public List<GroupResponse> getGroups() {
+        return groupRepository.findAll().stream().map(
+                group -> GroupResponse.builder()
+                        .id(group.getId())
+                        .name(group.getName())
+                        .course(group.getCourse())
+                        .speciality(group.getSpeciality() != null ?
+                                String.format("%s%s", group.getSpeciality().getId(), group.getSpeciality().getName()) : "")
+                        .build()
+        ).toList();
     }
 
-    public User getUserById(Long id) {
-        return userRepository.findById(id).orElseThrow(() -> {
+    public UserResponse getUserById(Long id) {
+        return convert(userRepository.findById(id).orElseThrow(() -> {
             log.error(String.format("User with id %d not found", id));
             return new IllegalArgumentException(String.format("User with id %d not found", id));
-        });
+        }), UserResponse.class);
     }
 
+    // todo: think how to change this
     public Group getGroupById(Long id) {
         Group g = groupRepository.findById(id).orElseThrow(() -> {
             log.error(String.format("Group with id %d not found", id));
@@ -332,7 +317,7 @@ public class AdminService {
     }
 
     //todo
-    public String changeSchedule(ScheduleDTO dto) {
+    public String changeSchedule(ScheduleResponse dto) {
         return null;
     }
 
@@ -343,6 +328,22 @@ public class AdminService {
         });
         groupRepository.delete(group);
         return "Group successfully deleted";
+    }
+
+    public String updateCredentialUserById(Long id, AuthRequest request) {
+        //todo: add send email with changed password
+        User candidate = userRepository.findById(id).orElseThrow(() -> {
+            log.error("User with id " + request.getPassword() + "not found");
+            return new UsernameNotFoundException("User with id " + request.getPassword() + "not found");
+        });
+        if (request.getUsername() != null) {
+            candidate.setEmail(request.getUsername());
+        }
+        if (request.getPassword() != null) {
+            candidate.setPassword(passwordEncoder.encode(request.getPassword()));
+        }
+        userRepository.save(candidate);
+        return "User credential was update";
     }
 
     private Set<Sample> getTypeSchedule(Group group) {
@@ -360,7 +361,7 @@ public class AdminService {
     }
 
     private void createEmailNotification(User dto, String password) {
-        Email email = Email.builder()
+        EmailResponse email = EmailResponse.builder()
                 .to(dto.getEmail())
                 .subject("Добро пожаловать в мобильное приложение.")
                 .template("welcome-email.html")
@@ -377,46 +378,5 @@ public class AdminService {
 
     private <S, D> D convert(S source, Class<D> dClass) {
         return modelMapper.map(source, dClass);
-    }
-
-    public String resetPasswordForUserById(ResetPasswordDTO dto) {
-        //todo: add send email with changed password
-        User candidate = userRepository.findById(dto.getId()).orElseThrow(() -> {
-            log.error("User with id " + dto.getPassword() + "not found");
-            return new UsernameNotFoundException("User with id " + dto.getPassword() + "not found");
-        });
-        candidate.setPassword(passwordEncoder.encode(dto.getPassword()));
-        userRepository.save(candidate);
-        return "Password was reset";
-    }
-
-    public String createSchedule(SampleDTO dto) {
-        Group g = groupRepository.findById(dto.getGroup())
-                .orElseThrow(() -> {
-                    log.error(String.format("Group %d already exist", dto.getGroup()));
-                    return new IllegalArgumentException(String.format("Group %d already exist", dto.getGroup()));
-                });
-        User teacher = userRepository.findById(dto.getTeacher())
-                .orElseThrow(() -> {
-                    log.error(String.format("Teacher %d already exist", dto.getTeacher()));
-                    return new IllegalArgumentException(String.format("Teacher %d already exist", dto.getTeacher()));
-                });
-        Subject subject = subjectRepository.findById(dto.getSubject())
-                .orElseThrow(() -> {
-                    log.error(String.format("Subject %d already exist", dto.getSubject()));
-                    return new IllegalArgumentException(String.format("Subject %d already exist", dto.getSubject()));
-                });
-
-        Sample sample = Sample.builder()
-                .day(dto.getDay())
-                .group(g)
-                .numberPair(dto.getNumberPair())
-                .teacher(teacher)
-                .subject(subject)
-                .classroom(dto.getClassroom())
-                .parity(dto.getParity())
-                .build();
-        sampleRepository.save(sample);
-        return "OK";
     }
 }

@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import ru.ncti.backend.dto.AuthDTO;
+import ru.ncti.backend.api.request.AuthRequest;
 import ru.ncti.backend.service.AuthService;
 
 import javax.servlet.http.HttpServletRequest;
@@ -25,8 +25,8 @@ public class AuthController {
     private final AuthService authService;
 
     @PostMapping("/login")
-    public ResponseEntity<Map<String, String>> login(@RequestBody AuthDTO dto) {
-        return ResponseEntity.status(OK).body(authService.login(dto));
+    public ResponseEntity<Map<String, String>> login(@RequestBody AuthRequest request) {
+        return ResponseEntity.status(OK).body(authService.login(request));
     }
 
     @PostMapping("/logout")

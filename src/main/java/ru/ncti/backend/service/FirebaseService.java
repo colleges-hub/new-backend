@@ -11,14 +11,14 @@ import lombok.extern.log4j.Log4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ru.ncti.backend.dto.ChatViewDTO;
-import ru.ncti.backend.entity.Chat;
-import ru.ncti.backend.entity.Group;
-import ru.ncti.backend.entity.PrivateChat;
-import ru.ncti.backend.entity.User;
-import ru.ncti.backend.repository.ChatRepository;
+import ru.ncti.backend.api.response.ViewChatResponse;
+import ru.ncti.backend.model.Group;
+import ru.ncti.backend.model.PrivateChat;
+import ru.ncti.backend.model.PublicChat;
+import ru.ncti.backend.model.User;
 import ru.ncti.backend.repository.GroupRepository;
 import ru.ncti.backend.repository.PrivateChatRepository;
+import ru.ncti.backend.repository.PublicChatRepository;
 import ru.ncti.backend.repository.UserRepository;
 
 import java.util.HashSet;
@@ -29,9 +29,10 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import static ru.ncti.backend.model.RabbitQueue.PRIVATE_CHAT_NOTIFICATION;
-import static ru.ncti.backend.model.RabbitQueue.PUBLIC_CHAT_NOTIFICATION;
-import static ru.ncti.backend.model.RabbitQueue.UPDATE_SCHEDULE;
+import static ru.ncti.backend.config.RabbitConfig.PRIVATE_CHAT_NOTIFICATION;
+import static ru.ncti.backend.config.RabbitConfig.PUBLIC_CHAT_NOTIFICATION;
+import static ru.ncti.backend.config.RabbitConfig.UPDATE_SCHEDULE;
+
 
 /**
  * user: ichuvilin
@@ -43,7 +44,7 @@ public class FirebaseService {
 
     // TODO: change all
 
-    private final ChatRepository chatRepository;
+    private final PublicChatRepository publicChatRepository;
     private final UserRepository userRepository;
     private final PrivateChatRepository privateChatRepository;
     private final RedisService redisService;
@@ -54,12 +55,12 @@ public class FirebaseService {
     @RabbitListener(queues = PUBLIC_CHAT_NOTIFICATION)
     @Transactional(readOnly = true)
     public void sendPublicNotification(Map<String, String> map) throws FirebaseMessagingException, JsonProcessingException {
-        Chat chat = chatRepository.findById(UUID.fromString(map.get("chat")))
+        PublicChat publicChat = publicChatRepository.findById(UUID.fromString(map.get("chat")))
                 .orElseThrow(() -> new IllegalArgumentException("Chat not found"));
         User user = userRepository.findByEmail(map.get("user"))
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-        Set<User> usersInChat = chat.getUsers();
+        Set<User> usersInChat = publicChat.getUsers();
 
         Set<String> onlineUserEmails = redisService.getValueSet(map.get("chat"));
         Set<User> userOnline = onlineUserEmails.stream()
@@ -83,14 +84,14 @@ public class FirebaseService {
                 MulticastMessage multicastMessage = MulticastMessage.builder()
                         .addAllTokens(fcmTokens)
                         .setNotification(Notification.builder()
-                                .setTitle(String.format("Чат: %s", chat.getName()))
+                                .setTitle(String.format("Чат: %s", publicChat.getName()))
                                 .setBody(String.format("%s: %s", user.getFirstname(), map.get("text")))
                                 .build())
                         .putData("page", "ChatRoute")
-                        .putData("chat", objectMapper.writeValueAsString(ChatViewDTO.builder()
+                        .putData("chat", objectMapper.writeValueAsString(ViewChatResponse.builder()
                                 .type("PUBLIC")
-                                .name(chat.getName())
-                                .id(chat.getId())
+                                .name(publicChat.getName())
+                                .id(publicChat.getId())
                                 .build()))
                         .build();
                 firebaseMessaging.sendMulticast(multicastMessage);
@@ -138,7 +139,7 @@ public class FirebaseService {
                                 .setBody(String.format("%s", map.get("text")))
                                 .build())
                         .putData("page", "ChatRoute")
-                        .putData("chat", objectMapper.writeValueAsString(ChatViewDTO.builder()
+                        .putData("chat", objectMapper.writeValueAsString(ViewChatResponse.builder()
                                 .type("PRIVATE")
                                 .name(name)
                                 .id(chat.getId())

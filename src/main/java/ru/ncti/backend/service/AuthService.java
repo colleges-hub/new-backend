@@ -7,8 +7,8 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
-import ru.ncti.backend.dto.AuthDTO;
-import ru.ncti.backend.entity.User;
+import ru.ncti.backend.api.request.AuthRequest;
+import ru.ncti.backend.model.User;
 import ru.ncti.backend.repository.UserRepository;
 import ru.ncti.backend.security.JwtTokenUtil;
 import ru.ncti.backend.security.UserDetailsServiceImpl;
@@ -31,13 +31,13 @@ public class AuthService {
     private final UserRepository userRepository;
 
 
-    public Map<String, String> login(AuthDTO dto) {
+    public Map<String, String> login(AuthRequest request) {
         Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(dto.getUsername(), dto.getPassword()));
+                new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword()));
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
-        User userDetails = (User) userDetailsService.loadUserByUsername(dto.getUsername());
+        User userDetails = (User) userDetailsService.loadUserByUsername(request.getUsername());
 
         String accessToken = jwtTokenUtil.generateToken(userDetails);
         String refreshToken = jwtTokenUtil.generateRefreshToken(userDetails);

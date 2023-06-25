@@ -5,13 +5,17 @@ import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.amqp.support.converter.MessageConverter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import ru.ncti.backend.model.RabbitQueue;
 
 /**
  * user: ichuvilin
  */
 @Configuration
 public class RabbitConfig {
+
+    public static final String EMAIL_UPDATE = "email_update";
+    public static final String PUBLIC_CHAT_NOTIFICATION = "public_chat_notification";
+    public static final String PRIVATE_CHAT_NOTIFICATION = "private_chat_notification";
+    public static final String UPDATE_SCHEDULE = "update_schedule";
 
     @Bean
     public MessageConverter jsonMessage() {
@@ -20,21 +24,21 @@ public class RabbitConfig {
 
     @Bean
     public Queue emailQueue() {
-        return new Queue(RabbitQueue.EMAIL_UPDATE);
+        return new Queue(EMAIL_UPDATE);
     }
 
     @Bean
     public Queue publicNotificationQueue() {
-        return new Queue(RabbitQueue.PUBLIC_CHAT_NOTIFICATION);
+        return new Queue(PUBLIC_CHAT_NOTIFICATION);
     }
 
     @Bean
     public Queue privateNotificationQueue() {
-        return new Queue(RabbitQueue.PRIVATE_CHAT_NOTIFICATION);
+        return new Queue(PRIVATE_CHAT_NOTIFICATION);
     }
 
     @Bean
     public Queue scheduleNotificationQueue() {
-        return new Queue(RabbitQueue.UPDATE_SCHEDULE);
+        return new Queue(UPDATE_SCHEDULE);
     }
 }

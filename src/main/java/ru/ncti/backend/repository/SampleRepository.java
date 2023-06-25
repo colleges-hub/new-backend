@@ -2,9 +2,9 @@ package ru.ncti.backend.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
-import ru.ncti.backend.entity.Group;
-import ru.ncti.backend.entity.Sample;
-import ru.ncti.backend.entity.User;
+import ru.ncti.backend.model.Group;
+import ru.ncti.backend.model.Sample;
+import ru.ncti.backend.model.User;
 
 import java.util.List;
 

@@ -6,25 +6,25 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ru.ncti.backend.dto.ScheduleChangeDTO;
-import ru.ncti.backend.dto.TeacherScheduleViewDTO;
-import ru.ncti.backend.dto.UserViewDTO;
-import ru.ncti.backend.entity.Group;
-import ru.ncti.backend.entity.Sample;
-import ru.ncti.backend.entity.Schedule;
-import ru.ncti.backend.entity.Subject;
-import ru.ncti.backend.entity.User;
+import ru.ncti.backend.api.request.ScheduleChangeRequest;
+import ru.ncti.backend.api.response.TeacherScheduleResponse;
+import ru.ncti.backend.api.response.UserResponse;
+import ru.ncti.backend.model.Group;
+import ru.ncti.backend.model.Sample;
+import ru.ncti.backend.model.Schedule;
+import ru.ncti.backend.model.Subject;
+import ru.ncti.backend.model.User;
 import ru.ncti.backend.repository.GroupRepository;
 import ru.ncti.backend.repository.SampleRepository;
 import ru.ncti.backend.repository.ScheduleRepository;
 import ru.ncti.backend.repository.SubjectRepository;
+import ru.ncti.backend.util.UserUtil;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.TextStyle;
-import java.time.temporal.WeekFields;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -39,7 +39,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static ru.ncti.backend.model.RabbitQueue.UPDATE_SCHEDULE;
+import static ru.ncti.backend.config.RabbitConfig.UPDATE_SCHEDULE;
+
 
 /**
  * user: ichuvilin
@@ -54,40 +55,42 @@ public class TeacherService {
     private final SubjectRepository subjectRepository;
     private final ScheduleRepository scheduleRepository;
     private final RabbitTemplate rabbitTemplate;
+    private final UserUtil userUtil;
 
-    public UserViewDTO getProfile() {
+    public UserResponse getProfile() {
         var auth = SecurityContextHolder.getContext().getAuthentication();
         User user = (User) auth.getPrincipal();
-        return UserViewDTO.builder()
+        return UserResponse.builder()
                 .id(user.getId())
                 .firstname(user.getFirstname())
                 .lastname(user.getLastname())
                 .surname(user.getSurname())
                 .email(user.getEmail())
                 .role(user.getRoles())
+                .photo(user.getPhoto())
                 .build();
     }
 
-    public Map<String, Set<TeacherScheduleViewDTO>> schedule() {
+    public Map<String, Set<TeacherScheduleResponse>> schedule() {
         var auth = SecurityContextHolder.getContext().getAuthentication();
         User teacher = (User) auth.getPrincipal();
         return makeSchedule(sampleRepository.findAllByTeacher(teacher), teacher.getId());
     }
 
-    private Map<String, Set<TeacherScheduleViewDTO>> makeSchedule(List<Sample> list, Long teacherId) {
-        Map<String, Set<TeacherScheduleViewDTO>> map = new HashMap<>();
+    private Map<String, Set<TeacherScheduleResponse>> makeSchedule(List<Sample> list, Long teacherId) {
+        Map<String, Set<TeacherScheduleResponse>> map = new HashMap<>();
         List<Schedule> sch = scheduleRepository.findLatestScheduleForTeacher(teacherId);
 
         for (Sample sample : getTypeSchedule(list)) {
             String key = sample.getDay();
-            TeacherScheduleViewDTO dto = TeacherScheduleViewDTO.builder()
+            TeacherScheduleResponse dto = TeacherScheduleResponse.builder()
                     .classroom(sample.getClassroom())
                     .groups(List.of(sample.getGroup().getName()))
                     .numberPair(sample.getNumberPair())
                     .subject(sample.getSubject().getName())
                     .build();
 
-            Optional<TeacherScheduleViewDTO> found = map.getOrDefault(key, Collections.emptySet())
+            Optional<TeacherScheduleResponse> found = map.getOrDefault(key, Collections.emptySet())
                     .stream()
                     .filter(scheduleDTO ->
                             scheduleDTO.getNumberPair().equals(dto.getNumberPair()) &&
@@ -97,7 +100,7 @@ public class TeacherService {
                     .findFirst();
 
             if (found.isPresent()) {
-                TeacherScheduleViewDTO existing = found.get();
+                TeacherScheduleResponse existing = found.get();
                 Set<String> groups = new HashSet<>(existing.getGroups());
                 groups.addAll(dto.getGroups());
                 existing.setGroups(new ArrayList<>(groups));
@@ -112,9 +115,9 @@ public class TeacherService {
                     .getDisplayName(TextStyle.FULL, new Locale("ru"));
             String capitalizedDay = date.substring(0, 1).toUpperCase() + date.substring(1);
 
-            Set<TeacherScheduleViewDTO> set = map.get(capitalizedDay);
+            Set<TeacherScheduleResponse> set = map.get(capitalizedDay);
             if (set != null) {
-                TeacherScheduleViewDTO newScheduleDTO = TeacherScheduleViewDTO.builder()
+                TeacherScheduleResponse newScheduleDTO = TeacherScheduleResponse.builder()
                         .numberPair(schedule.getNumberPair())
                         .subject(schedule.getSubject().getName())
                         .classroom(schedule.getClassroom())
@@ -130,12 +133,12 @@ public class TeacherService {
     }
 
     @Transactional(readOnly = false)
-    public String changeSchedule(ScheduleChangeDTO dto) throws ParseException {
+    public String changeSchedule(ScheduleChangeRequest request) throws ParseException {
         var auth = SecurityContextHolder.getContext().getAuthentication();
         User teacher = (User) auth.getPrincipal();
 
         List<Group> groups = new ArrayList<>();
-        for (String gr : dto.getGroup()) {
+        for (String gr : request.getGroup()) {
             Group group = groupRepository.findByName(gr)
                     .orElseThrow(() -> {
                         log.error(String.format("Group %s not found", gr));
@@ -144,10 +147,10 @@ public class TeacherService {
             groups.add(group);
         }
 
-        Subject subject = subjectRepository.findByName(dto.getSubject())
+        Subject subject = subjectRepository.findByName(request.getSubject())
                 .orElseThrow(() -> {
-                    log.error(String.format("Subject %s not found", dto.getSubject()));
-                    return new IllegalArgumentException(String.format("Subject %s not found", dto.getSubject()));
+                    log.error(String.format("Subject %s not found", request.getSubject()));
+                    return new IllegalArgumentException(String.format("Subject %s not found", request.getSubject()));
                 });
 
         SimpleDateFormat format = new SimpleDateFormat();
@@ -155,16 +158,16 @@ public class TeacherService {
 
         for (Group group : groups) {
             Schedule schedule = Schedule.builder()
-                    .date(format.parse(dto.getDate().split("T")[0]))
+                    .date(format.parse(request.getDate().split("T")[0]))
                     .group(group)
                     .teacher(teacher)
-                    .numberPair(dto.getNumberPair())
+                    .numberPair(request.getNumberPair())
                     .subject(subject)
-                    .classroom(dto.getClassroom())
+                    .classroom(request.getClassroom())
                     .build();
             rabbitTemplate.convertAndSend(UPDATE_SCHEDULE,
                     new HashMap<>() {{
-                        put("date", dto.getDate());
+                        put("date", request.getDate());
                         put("group", schedule.getGroup().getName());
                         put("pair", schedule.getNumberPair());
                         put("classroom", schedule.getClassroom());
@@ -175,25 +178,19 @@ public class TeacherService {
     }
 
 
-    private void sortedMap(Map<String, Set<TeacherScheduleViewDTO>> map) {
+    private void sortedMap(Map<String, Set<TeacherScheduleResponse>> map) {
         map.forEach((key, value) -> {
-            Set<TeacherScheduleViewDTO> sortedSet = value.stream()
-                    .sorted(Comparator.comparingInt(TeacherScheduleViewDTO::getNumberPair))
+            Set<TeacherScheduleResponse> sortedSet = value.stream()
+                    .sorted(Comparator.comparingInt(TeacherScheduleResponse::getNumberPair))
                     .collect(Collectors.toCollection(LinkedHashSet::new));
             map.put(key, sortedSet);
         });
     }
 
     private Set<Sample> getTypeSchedule(List<Sample> list) {
-        String currentWeekType = getCurrentWeekType();
+        String currentWeekType = userUtil.getCurrentWeekType();
         return list.stream()
                 .filter(s -> s.getParity().equals("0") || s.getParity().equals(currentWeekType))
                 .collect(Collectors.toSet());
-    }
-
-    private String getCurrentWeekType() {
-        LocalDate currentDate = LocalDate.now();
-        int currentWeekNumber = currentDate.get(WeekFields.of(Locale.getDefault()).weekOfWeekBasedYear());
-        return currentWeekNumber % 2 == 0 ? "2" : "1";
     }
 }

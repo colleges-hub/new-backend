@@ -9,9 +9,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import ru.ncti.backend.dto.ScheduleChangeDTO;
-import ru.ncti.backend.dto.TeacherScheduleViewDTO;
-import ru.ncti.backend.dto.UserViewDTO;
+import ru.ncti.backend.api.response.UserResponse;
+import ru.ncti.backend.api.request.ScheduleChangeRequest;
+import ru.ncti.backend.api.response.TeacherScheduleResponse;
 import ru.ncti.backend.service.TeacherService;
 
 import java.text.ParseException;
@@ -29,19 +29,19 @@ public class TeacherController {
     private final TeacherService teacherService;
 
     @GetMapping("/profile")
-    public ResponseEntity<UserViewDTO> getProfile() {
+    public ResponseEntity<UserResponse> getProfile() {
         return ResponseEntity.status(HttpStatus.OK).body(teacherService.getProfile());
     }
 
     @GetMapping("/schedule")
-    public ResponseEntity<Map<String, Set<TeacherScheduleViewDTO>>> getSchedule() {
+    public ResponseEntity<Map<String, Set<TeacherScheduleResponse>>> getSchedule() {
         return ResponseEntity.status(HttpStatus.OK).body(teacherService.schedule());
     }
 
     @PostMapping("/change-schedule")
-    public ResponseEntity<String> changeSchedule(@RequestBody ScheduleChangeDTO dto) {
+    public ResponseEntity<String> changeSchedule(@RequestBody ScheduleChangeRequest request) {
         try {
-            return ResponseEntity.status(HttpStatus.OK).body(teacherService.changeSchedule(dto));
+            return ResponseEntity.status(HttpStatus.OK).body(teacherService.changeSchedule(request));
         } catch (ParseException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
