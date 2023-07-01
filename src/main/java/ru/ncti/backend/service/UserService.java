@@ -1,10 +1,14 @@
 package ru.ncti.backend.service;
 
+import io.minio.MinioClient;
+import io.minio.PutObjectArgs;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 import ru.ncti.backend.api.request.AuthRequest;
 import ru.ncti.backend.api.request.FCMRequest;
 import ru.ncti.backend.api.response.GroupResponse;
@@ -20,6 +24,8 @@ import ru.ncti.backend.repository.ScheduleRepository;
 import ru.ncti.backend.repository.UserRepository;
 import ru.ncti.backend.util.UserUtil;
 
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.TextStyle;
@@ -33,6 +39,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
@@ -43,12 +50,16 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class UserService {
 
+    @Value("${minio.bucket-name}")
+    private String bucketName;
+
     private final UserUtil userUtil;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final GroupRepository groupRepository;
     private final ScheduleRepository scheduleRepository;
     private final PrivateChatRepository privateChatRepository;
+    private final MinioClient minioClient;
 
     public String updateCredential(AuthRequest request) throws IllegalArgumentException {
         var auth = SecurityContextHolder.getContext().getAuthentication();
@@ -65,7 +76,6 @@ public class UserService {
         userRepository.save(user);
         return "Credential was updated";
     }
-
 
     public List<GroupResponse> getGroups() {
         List<Group> groups = groupRepository.findAll();
@@ -185,4 +195,31 @@ public class UserService {
 
         return "Token was added";
     }
+
+    public String updateUserPhoto(MultipartFile file) {
+        try (InputStream in = new ByteArrayInputStream(file.getBytes())) {
+            var auth = SecurityContextHolder.getContext().getAuthentication();
+            User user = (User) auth.getPrincipal();
+
+            String fileName = UUID.randomUUID().toString();
+            String fileExtend = file.getOriginalFilename().substring(file.getOriginalFilename().length() - 3);
+
+            String fileFullName = String.format("%s.%s", fileName, fileExtend);
+
+            minioClient.putObject(PutObjectArgs.builder()
+                    .bucket(bucketName)
+                    .object(fileFullName)
+                    .stream(in, file.getSize(), -1)
+                    .build());
+
+            user.setPhoto(fileFullName);
+            userRepository.save(user);
+
+            return "File uploaded.";
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return "Something wrong.";
+    }
+
 }

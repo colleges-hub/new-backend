@@ -9,7 +9,9 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 import ru.ncti.backend.api.request.AuthRequest;
 import ru.ncti.backend.api.request.FCMRequest;
 import ru.ncti.backend.api.response.GroupResponse;
@@ -43,6 +45,11 @@ public class UserController {
     @PostMapping("/fcm-token")
     public ResponseEntity<String> getFCMToken(@RequestBody FCMRequest request) {
         return ResponseEntity.status(HttpStatus.OK).body(userService.addFCMToken(request));
+    }
+
+    @PostMapping("/upload")
+    public ResponseEntity<String> uploadFileToMinIO(@RequestParam("file") MultipartFile file) {
+        return ResponseEntity.status(HttpStatus.OK).body(userService.updateUserPhoto(file));
     }
 
     @GetMapping("/groups")
