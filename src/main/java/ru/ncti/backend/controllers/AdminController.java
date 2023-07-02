@@ -52,12 +52,12 @@ public class AdminController {
     }
 
     @PostMapping("/create-user")
-    public ResponseEntity<String> createStudent(@RequestBody UserRequest dto) {
+    public ResponseEntity<String> createUser(@RequestBody UserRequest dto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(adminService.createUser(dto));
     }
 
     @PostMapping("/upload-users")
-    public ResponseEntity<String> uploadStudents(@RequestParam("file") MultipartFile file) {
+    public ResponseEntity<String> uploadUsers(@RequestParam("file") MultipartFile file) {
         try {
             return ResponseEntity.status(HttpStatus.OK).body(adminService.uploadUsers(file));
         } catch (IOException | CsvValidationException e) {

@@ -5,7 +5,7 @@ create table users
     firstname                  varchar(255),
     lastname                   varchar(255),
     surname                    varchar(255),
-    email                      varchar(255),
+    email                      varchar(255) UNIQUE,
     password                   varchar(255),
     is_account_non_expired     boolean,
     is_account_non_locked      boolean,
