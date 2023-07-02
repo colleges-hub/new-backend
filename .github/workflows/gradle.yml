@@ -29,13 +29,12 @@ jobs:
           POSTGRES_DB: myapp
         ports:
           - 5432:5432
-        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
 
       rabbitmq:
         image: rabbitmq:3.11.0-management
         env:
-          RABBITMQ_DEFAULT_USER: rabbitmquser
-          RABBITMQ_DEFAULT_PASS: rabbitmqpass
+          RABBITMQ_DEFAULT_USER: user
+          RABBITMQ_DEFAULT_PASS: pass
         ports:
           - 5672:5672
           - 15672:15672
@@ -43,6 +42,15 @@ jobs:
         image: redis:latest
         ports:
           - 6379:6379
+
+      minio:
+        image: quay.io/minio/minio:latest
+        env:
+          MINIO_ROOT_USER: user
+          MINIO_ROOT_PASSWORD: pass
+        ports:
+          - 9000:9000
+          - 9090:9090
 
     env:
       DB_URL: jdbc:postgresql://localhost:5432/myapp
@@ -52,6 +60,10 @@ jobs:
       RABBITMQ_USER: rabbitmquser
       RABBITMQ_PASSWORD: p@rabbitmqpass
       SECRET: 1234
+      MINIO_URL: localhost
+      MINIO_ACCESS: user
+      MINIO_SECRET: pass
+      MINIO_BUCKET: buck
 
     steps:
       - uses: actions/checkout@v3
