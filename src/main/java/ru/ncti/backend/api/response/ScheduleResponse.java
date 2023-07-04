@@ -20,6 +20,6 @@ public class ScheduleResponse {
     private String day;
     private Integer numberPair;
     private String subject;
-    private List<UserResponse> teachers;
+    private List<String> another;
     private String classroom;
 }

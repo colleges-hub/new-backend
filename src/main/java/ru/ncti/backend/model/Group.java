@@ -46,5 +46,5 @@ public class Group {
     private Set<Schedule> schedules;
 
     @ManyToOne
-    private Deanery deanery;
+    private Section section;
 }

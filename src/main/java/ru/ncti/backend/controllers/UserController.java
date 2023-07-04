@@ -33,6 +33,16 @@ public class UserController {
 
     private final UserService userService;
 
+    @GetMapping("/profile")
+    public ResponseEntity<UserResponse> getProfile() {
+        return ResponseEntity.status(HttpStatus.OK).body(userService.getProfile());
+    }
+
+    @GetMapping("/schedule")
+    public ResponseEntity<Map<String, Set<ScheduleResponse>>> getSchedule() {
+        return ResponseEntity.status(HttpStatus.OK).body(userService.getSchedule());
+    }
+
     @PatchMapping("/update-credential")
     public ResponseEntity<String> updateCredential(@RequestBody AuthRequest request) {
         try {

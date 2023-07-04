@@ -83,7 +83,7 @@ public class User implements UserDetails {
     private Group group;
 
     @ManyToOne
-    private Deanery deanery;
+    private Section section;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
