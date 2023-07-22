@@ -65,6 +65,9 @@ import static ru.ncti.backend.config.RabbitConfig.UPDATE_SCHEDULE;
 @RequiredArgsConstructor
 public class UserService {
 
+    @Value("${minio.url}")
+    private String minioURL;
+
     @Value("${minio.bucket-name}")
     private String bucketName;
 
@@ -89,6 +92,7 @@ public class UserService {
                 .surname(user.getSurname())
                 .email(user.getUsername())
                 .role(user.getRoles())
+//                .photo(String.format("%s/%s", minioURL, user.getPhoto()))
                 .photo(user.getPhoto())
                 .build();
     }
@@ -105,7 +109,23 @@ public class UserService {
             }
         }
 
-        return null;
+        return Collections.emptyMap();
+    }
+
+    public String updateCredential(AuthRequest request) throws IllegalArgumentException {
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        User user = (User) auth.getPrincipal();
+
+        if (request.getUsername() != null) {
+            user.setEmail(request.getUsername());
+        }
+        if (request.getPassword() == null || request.getPassword().length() <= 5) {
+            throw new IllegalArgumentException("Не удалось поменять пароль");
+        }
+
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        userRepository.save(user);
+        return "Credential was updated";
     }
 
     @Transactional(readOnly = false)
@@ -153,22 +173,6 @@ public class UserService {
         return "Changes was added";
     }
 
-    public String updateCredential(AuthRequest request) throws IllegalArgumentException {
-        var auth = SecurityContextHolder.getContext().getAuthentication();
-        User user = (User) auth.getPrincipal();
-
-        if (request.getUsername() != null) {
-            user.setEmail(request.getUsername());
-        }
-        if (request.getPassword() == null || request.getPassword().length() <= 5) {
-            throw new IllegalArgumentException("Не удалось поменять пароль");
-        }
-
-        user.setPassword(passwordEncoder.encode(request.getPassword()));
-        userRepository.save(user);
-        return "Credential was updated";
-    }
-
     public List<GroupResponse> getGroups() {
         List<Group> groups = groupRepository.findAll();
 
@@ -204,18 +208,18 @@ public class UserService {
 
                 Set<ScheduleResponse> set = map.get(capitalizedDay);
                 if (set != null) {
-                    ScheduleResponse newScheduleResponse = ScheduleResponse.builder()
+                    ScheduleResponse scheduleResponse = ScheduleResponse.builder()
                             .day(capitalizedDay)
                             .numberPair(schedule.getNumberPair())
                             .subject(schedule.getSubject().getName())
-                            .another(List.of(format("%s %s %s",
+                            .data(List.of(format("%s %s %s",
                                     schedule.getTeacher().getLastname(),
                                     schedule.getTeacher().getFirstname(),
                                     schedule.getTeacher().getSurname())))
                             .classroom(schedule.getClassroom())
                             .build();
-                    set.removeIf(s -> Objects.equals(s.getNumberPair(), newScheduleResponse.getNumberPair()));
-                    set.add(newScheduleResponse);
+                    set.removeIf(s -> Objects.equals(s.getNumberPair(), scheduleResponse.getNumberPair()));
+                    set.add(scheduleResponse);
                 }
             }
         }
@@ -285,7 +289,7 @@ public class UserService {
             User user = (User) auth.getPrincipal();
 
             String fileName = UUID.randomUUID().toString();
-            String fileExtend = file.getOriginalFilename().substring(file.getOriginalFilename().length() - 3);
+            String fileExtend = Objects.requireNonNull(file.getOriginalFilename()).substring(file.getOriginalFilename().length() - 3);
 
             String fileFullName = format("%s.%s", fileName, fileExtend);
 
@@ -305,7 +309,6 @@ public class UserService {
         return "Something wrong.";
     }
 
-
     private Map<String, Set<ScheduleResponse>> getScheduleFromTeacher(User user) {
         Map<String, Set<ScheduleResponse>> map = new HashMap<>();
         List<Schedule> sch = scheduleRepository.findLatestScheduleForTeacher(user.getId());
@@ -316,7 +319,7 @@ public class UserService {
             ScheduleResponse dto = ScheduleResponse.builder()
                     .day(key)
                     .classroom(sample.getClassroom())
-                    .another(List.of(sample.getGroup().getName()))
+                    .data(List.of(sample.getGroup().getName()))
                     .numberPair(sample.getNumberPair())
                     .subject(sample.getSubject().getName())
                     .build();
@@ -332,9 +335,9 @@ public class UserService {
 
             if (found.isPresent()) {
                 ScheduleResponse existing = found.get();
-                Set<String> groups = new HashSet<>(existing.getAnother());
-                groups.addAll(dto.getAnother());
-                existing.setAnother(new ArrayList<>(groups));
+                Set<String> groups = new HashSet<>(existing.getData());
+                groups.addAll(dto.getData());
+                existing.setData(new ArrayList<>(groups));
             } else {
                 map.computeIfAbsent(key, k -> new HashSet<>()).add(dto);
             }
@@ -348,14 +351,14 @@ public class UserService {
 
             Set<ScheduleResponse> set = map.get(capitalizedDay);
             if (set != null) {
-                ScheduleResponse newScheduleDTO = ScheduleResponse.builder()
+                ScheduleResponse scheduleResponse = ScheduleResponse.builder()
                         .numberPair(schedule.getNumberPair())
                         .subject(schedule.getSubject().getName())
                         .classroom(schedule.getClassroom())
-                        .another(List.of(schedule.getGroup().getName()))
+                        .data(List.of(schedule.getGroup().getName()))
                         .build();
-                set.removeIf(s -> Objects.equals(s.getNumberPair(), newScheduleDTO.getNumberPair()));
-                set.add(newScheduleDTO);
+                set.removeIf(s -> Objects.equals(s.getNumberPair(), scheduleResponse.getNumberPair()));
+                set.add(scheduleResponse);
             }
         }
 
@@ -399,9 +402,9 @@ public class UserService {
                     String key = dto.getDay() + "-" + dto.getNumberPair() + "-" + dto.getClassroom() + "-" + dto.getSubject();
                     List<String> mergedTeachers = mergedTeachersMap.get(key);
                     if (mergedTeachers != null) {
-                        mergedTeachers.addAll(dto.getAnother());
+                        mergedTeachers.addAll(dto.getData());
                     } else {
-                        mergedTeachers = new ArrayList<>(dto.getAnother());
+                        mergedTeachers = new ArrayList<>(dto.getData());
                         mergedTeachersMap.put(key, mergedTeachers);
                     }
                 });
@@ -417,7 +420,7 @@ public class UserService {
                     .day(day)
                     .numberPair(numberPair)
                     .subject(subject)
-                    .another(mergedTeachers)
+                    .data(mergedTeachers)
                     .classroom(classroom)
                     .build();
 
@@ -432,7 +435,7 @@ public class UserService {
                 .day(sample.getDay())
                 .numberPair(sample.getNumberPair())
                 .subject(sample.getSubject().getName())
-                .another(List.of(format("%s %s %s",
+                .data(List.of(format("%s %s %s",
                         sample.getTeacher().getLastname(),
                         sample.getTeacher().getFirstname(),
                         sample.getTeacher().getSurname())))

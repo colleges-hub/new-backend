@@ -78,6 +78,7 @@ public class ChatService {
                 .id(chat.getId())
                 .name(chat.getName())
                 .type("PUBLIC")
+                .photo(chat.getPhoto())
                 .build()));
 
         pChat.forEach(chat -> {

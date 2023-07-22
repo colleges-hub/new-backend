@@ -38,4 +38,7 @@ public class PublicChat {
 
     @ManyToMany
     Set<User> users = new HashSet<>();
+
+    @Column(name = "photo")
+    private String photo;
 }
