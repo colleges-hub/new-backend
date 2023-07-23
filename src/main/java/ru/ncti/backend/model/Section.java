@@ -1,10 +1,6 @@
 package ru.ncti.backend.model;
 
-import ru.ncti.backend.model.enums.SectionType;
-
 import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -21,8 +17,7 @@ public class Section {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Enumerated(EnumType.STRING)
-    private SectionType type;
-
     private String name;
+
+    private String email;
 }

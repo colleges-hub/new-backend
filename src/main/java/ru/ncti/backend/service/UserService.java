@@ -6,6 +6,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -172,7 +175,7 @@ public class UserService {
         }
         return "Changes was added";
     }
-
+    
     public List<GroupResponse> getGroups() {
         List<Group> groups = groupRepository.findAll();
 
@@ -250,13 +253,22 @@ public class UserService {
                 .build();
     }
 
-    public List<UserResponse> getUsers() {
+    public List<UserResponse> getUsersWithPagination(int page, int size) {
+        // Создаем объект PageRequest с указанием номера страницы и размера страницы
+        Pageable pageable = PageRequest.of(page, size);
+
+        // Получаем текущего пользователя из контекста безопасности
         var auth = SecurityContextHolder.getContext().getAuthentication();
         User currentUser = (User) auth.getPrincipal();
 
-        final List<UserResponse> users = new ArrayList<>();
+        // Выполняем запрос к репозиторию с использованием пагинации
+        Page<User> usersPage = userRepository.findAllByOrderByLastname(pageable);
 
-        userRepository.findAll().forEach(user -> {
+        // Фильтруем пользователей, исключая текущего пользователя (ваш аккаунт)
+
+        List<UserResponse> users = new ArrayList<>();
+
+        usersPage.forEach(user -> {
             if (!user.getId().equals(currentUser.getId())) {
                 users.add(UserResponse.builder()
                         .id(user.getId())

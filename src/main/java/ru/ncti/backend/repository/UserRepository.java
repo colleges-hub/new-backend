@@ -1,5 +1,7 @@
 package ru.ncti.backend.repository;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import ru.ncti.backend.model.Group;
@@ -18,4 +20,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
     List<User> findAllByGroupOrderByLastname(Group group);
 
     List<User> findAllByRoles(Role role);
+
+    Page<User> findAllByOrderByLastname(Pageable pageable);
 }

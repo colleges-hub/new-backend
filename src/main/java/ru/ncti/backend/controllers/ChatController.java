@@ -16,9 +16,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import ru.ncti.backend.api.request.ChatRequest;
 import ru.ncti.backend.api.request.MessageRequest;
+import ru.ncti.backend.api.request.UsersRequest;
 import ru.ncti.backend.api.response.MessageResponse;
 import ru.ncti.backend.api.response.ViewChatResponse;
-import ru.ncti.backend.api.request.UsersRequest;
 import ru.ncti.backend.service.ChatService;
 
 import java.security.Principal;
