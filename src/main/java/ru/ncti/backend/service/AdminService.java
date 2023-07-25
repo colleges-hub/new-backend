@@ -72,14 +72,18 @@ public class AdminService {
     private final SampleRepository sampleRepository;
     private final RabbitTemplate rabbitTemplate;
 
+
     public UserResponse getProfile() {
         var auth = SecurityContextHolder.getContext().getAuthentication();
         User user = (User) auth.getPrincipal();
         UserResponse response = convert(user, UserResponse.class);
+        if (user.getPhoto() != null)
+            response.setPhoto(user.getPhoto());
         response.setRole(user.getRoles());
         return response;
     }
 
+    // TODO: all rework
     public String updateProfile(AuthRequest dto) {
         var auth = SecurityContextHolder.getContext().getAuthentication();
         User user = (User) auth.getPrincipal();
@@ -104,12 +108,10 @@ public class AdminService {
                     .orElseThrow(() -> new IllegalArgumentException(String.format("Role %s not found", role)));
             roles.add(rl);
         }
-        if (dto.getGroup() != null) {
-            if (!dto.getGroup().isEmpty()) {
-                Group group = groupRepository.findByName(dto.getGroup())
-                        .orElseThrow(() -> new IllegalArgumentException(String.format("Group %s not found", dto.getGroup())));
-                user.setGroup(group);
-            }
+        if (dto.getGroup() != null && !dto.getGroup().isEmpty()) {
+            Group group = groupRepository.findByName(dto.getGroup())
+                    .orElseThrow(() -> new IllegalArgumentException(String.format("Group %s not found", dto.getGroup())));
+            user.setGroup(group);
         }
 
         user.setRoles(roles);

@@ -13,4 +13,8 @@ public interface PrivateChatRepository extends JpaRepository<PrivateChat, UUID> 
     List<PrivateChat> findAllByUser1OrUser2(User user1, User user2);
 
     PrivateChat findByUser1AndUser2OrUser1AndUser2(User user1, User user2, User user2Again, User user1Again);
+
+
+    PrivateChat findByIdAndUser1AndUser2OrUser1AndUser2(UUID chat, User user1, User user2, User user2Again, User user1Again);
+
 }

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.FirebaseMessagingException;
+import com.google.firebase.messaging.Message;
 import com.google.firebase.messaging.MulticastMessage;
 import com.google.firebase.messaging.Notification;
 import lombok.RequiredArgsConstructor;
@@ -102,51 +103,33 @@ public class FirebaseService {
     @RabbitListener(queues = PRIVATE_CHAT_NOTIFICATION)
     @Transactional(readOnly = true)
     public void sendPrivateNotification(Map<String, String> map) throws FirebaseMessagingException, JsonProcessingException {
-        PrivateChat chat = privateChatRepository.findById(UUID.fromString(map.get("chat")))
-                .orElseThrow(() -> new IllegalArgumentException("Chat not found"));
         User user = userRepository.findByEmail(map.get("user"))
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-        Set<User> usersInChat = Set.of(chat.getUser1(), chat.getUser2());
+        PrivateChat chat = privateChatRepository.findById(UUID.fromString(map.get("chat"))).orElseThrow(null);
 
-        Set<String> onlineUserEmails = redisService.getValueSet(map.get("chat"));
+        User user2 = chat.getChatName(user);
 
-        if (onlineUserEmails.size() != 2) {
-            Set<User> userOnline = onlineUserEmails.stream()
-                    .map(userRepository::findByEmail)
-                    .filter(Optional::isPresent)
-                    .map(Optional::get)
-                    .collect(Collectors.toSet());
+        String chatWithUser = redisService.getValue(String.format("user:%s", user2.getUsername()));
 
-
-            // User offline
-            Set<User> userOffline = new HashSet<>(usersInChat);
-            userOffline.removeAll(userOnline);
-
-            Set<String> fcmTokens = new HashSet<>();
-
-            for (User user1 : userOffline) {
-                fcmTokens.add(user1.getDeviceId());
-            }
-
+        if (chatWithUser == null || !chatWithUser.equals(map.get("chat"))) {
+            String fcmToken = user2.getDeviceId();
             String name = String.format("%s %s", user.getFirstname(), user.getLastname());
 
-            if (!fcmTokens.isEmpty()) {
-                MulticastMessage multicastMessage = MulticastMessage.builder()
-                        .addAllTokens(fcmTokens)
-                        .setNotification(Notification.builder()
-                                .setTitle(name)
-                                .setBody(String.format("%s", map.get("text")))
-                                .build())
-                        .putData("page", "ChatRoute")
-                        .putData("chat", objectMapper.writeValueAsString(ViewChatResponse.builder()
-                                .type("PRIVATE")
-                                .name(name)
-                                .id(chat.getId())
-                                .build()))
-                        .build();
-                firebaseMessaging.sendMulticast(multicastMessage);
-            }
+            Message message = Message.builder()
+                    .setToken(fcmToken)
+                    .setNotification(Notification.builder()
+                            .setTitle(name)
+                            .setBody(String.format("%s", map.get("text")))
+                            .build())
+                    .putData("page", "ChatRoute")
+                    .putData("chat", objectMapper.writeValueAsString(ViewChatResponse.builder()
+                            .type("PRIVATE")
+                            .name(name)
+                            .id(chat.getId())
+                            .build()))
+                    .build();
+            firebaseMessaging.send(message);
         }
     }
 
@@ -154,6 +137,7 @@ public class FirebaseService {
     public void sendNotificationAboutChanges(Map<String, ?> map) throws FirebaseMessagingException {
         Group group = groupRepository.findByName(map.get("group").toString())
                 .orElseThrow(() -> new IllegalArgumentException("Group not found"));
+
         List<User> students = userRepository.findAllByGroupOrderByLastname(group);
 
         Set<String> tokens = new HashSet<>();
@@ -165,7 +149,6 @@ public class FirebaseService {
             }
         });
 
-        log.info(tokens);
 
         MulticastMessage multicastMessage = MulticastMessage.builder()
                 .addAllTokens(tokens)

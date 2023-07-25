@@ -24,9 +24,12 @@ import ru.ncti.backend.repository.UserRepository;
 import java.security.Principal;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+
+import static ru.ncti.backend.config.RabbitConfig.PRIVATE_CHAT_NOTIFICATION;
 
 
 /**
@@ -252,11 +255,11 @@ public class ChatService {
     }
 
     private MessageResponse createMessage(Message message, User user) {
-//        rabbitTemplate.convertAndSend(PRIVATE_CHAT_NOTIFICATION, new HashMap<>() {{
-//            put("chat", message.getPrivateChat().getId());
-//            put("user", user.getUsername());
-//            put("text", message.getText());
-//        }});
+        rabbitTemplate.convertAndSend(PRIVATE_CHAT_NOTIFICATION, new HashMap<>() {{
+            put("chat", message.getPrivateChat().getId());
+            put("user", user.getUsername());
+            put("text", message.getText());
+        }});
         log.info(message.getId());
         return MessageResponse.builder()
                 .id(message.getId())

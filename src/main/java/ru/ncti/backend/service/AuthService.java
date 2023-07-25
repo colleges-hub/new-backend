@@ -42,7 +42,7 @@ public class AuthService {
         String accessToken = jwtTokenUtil.generateToken(userDetails);
         String refreshToken = jwtTokenUtil.generateRefreshToken(userDetails);
 
-        return Map.of("accessToken", accessToken, "refreshToken", refreshToken);
+        return Map.of("token", accessToken, "refreshToken", refreshToken);
     }
 
     public Map<String, String> refreshAndGetAuthenticationToken(HttpServletRequest request) {
@@ -55,7 +55,7 @@ public class AuthService {
             String accessToken = jwtTokenUtil.generateToken(userDetails);
             String refreshToken = jwtTokenUtil.generateRefreshToken(userDetails);
 
-            return Map.of("accessToken", accessToken, "refreshToken", refreshToken);
+            return Map.of("token", accessToken, "refreshToken", refreshToken);
         }
         return Collections.emptyMap();
     }
