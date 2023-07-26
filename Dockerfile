@@ -20,15 +20,17 @@ COPY --from=build ${JAR_FILE} /home/app/app.jar
 # Установка рабочей директории
 WORKDIR /home/app
 
-ENV DB_URL=jdbc:postgresql://localhost:5432/db
-ENV DB_USER=q
-ENV DB_PASSWORD=q
-ENV EMAIL_USER=mail
-ENV EMAIL_PASSWORD=mail
+ENV DB_URL=jdbc:postgresql://mypostgres:5432/ncti
+ENV DB_USER=postgres
+ENV DB_PASSWORD=root
 ENV SECRET=dSgVkYp3s6v9y$B&
-ENV RABBITMQ_HOST=localhost
-ENV RABBITMQ_USER=u
-ENV RABBITMQ_PASSWORD=p
+ENV RABBITMQ_HOST=172.18.0.2
+ENV RABBITMQ_USER=userok
+ENV RABBITMQ_PASSWORD=p@ssw0rd
+ENV MINIO_URL=minio1
+ENV MINIO_ACCESS=ROOTUSER
+ENV MINIO_SECRET=CHANGEME123
+ENV MINIO_BUCKET=ncti
 
 EXPOSE 8080
 
