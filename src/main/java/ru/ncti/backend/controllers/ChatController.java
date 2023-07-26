@@ -1,7 +1,7 @@
 package ru.ncti.backend.controllers;
 
 import lombok.RequiredArgsConstructor;
-import lombok.extern.log4j.Log4j;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
@@ -31,7 +31,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/chats")
 @RequiredArgsConstructor
-@Log4j
+@Slf4j
 public class ChatController {
 
     private final SimpMessagingTemplate simpMessagingTemplate;

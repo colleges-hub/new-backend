@@ -1,7 +1,7 @@
 package ru.ncti.backend.service;
 
 import lombok.RequiredArgsConstructor;
-import lombok.extern.log4j.Log4j;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -22,7 +22,7 @@ import java.util.Map;
  */
 @Service
 @RequiredArgsConstructor
-@Log4j
+@Slf4j
 public class AuthService {
 
     private final JwtTokenUtil jwtTokenUtil;

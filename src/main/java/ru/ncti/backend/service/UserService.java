@@ -3,7 +3,7 @@ package ru.ncti.backend.service;
 import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.log4j.Log4j;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
@@ -63,7 +63,7 @@ import static ru.ncti.backend.config.RabbitConfig.UPDATE_SCHEDULE;
 /**
  * user: ichuvilin
  */
-@Log4j
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class UserService {
@@ -175,7 +175,7 @@ public class UserService {
         }
         return "Changes was added";
     }
-    
+
     public List<GroupResponse> getGroups() {
         List<Group> groups = groupRepository.findAll();
 

@@ -4,7 +4,7 @@ import com.opencsv.CSVReader;
 import com.opencsv.bean.CsvToBeanBuilder;
 import com.opencsv.exceptions.CsvValidationException;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.log4j.Log4j;
+import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -59,7 +59,7 @@ import static ru.ncti.backend.config.RabbitConfig.EMAIL_UPDATE;
  */
 @Service
 @RequiredArgsConstructor
-@Log4j
+@Slf4j
 public class AdminService {
 
     private final UserRepository userRepository;
@@ -80,6 +80,9 @@ public class AdminService {
         if (user.getPhoto() != null)
             response.setPhoto(user.getPhoto());
         response.setRole(user.getRoles());
+
+        log.info(String.format("Admin %s show your profile", user.getUsername()));
+
         return response;
     }
 
@@ -192,7 +195,7 @@ public class AdminService {
                         usr.setRole(List.of(user.getRole()));
                         createUser(usr);
                     } catch (IllegalArgumentException e) {
-                        log.error(e);
+                        log.error(e.getMessage());
                         throw new IllegalArgumentException(e);
                     }
                 })).toList();

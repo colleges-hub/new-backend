@@ -1,7 +1,7 @@
 package ru.ncti.backend.service;
 
 import lombok.RequiredArgsConstructor;
-import lombok.extern.log4j.Log4j;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -35,7 +35,7 @@ import static ru.ncti.backend.config.RabbitConfig.PRIVATE_CHAT_NOTIFICATION;
 /**
  * user: ichuvilin
  */
-@Log4j
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ChatService {
@@ -71,7 +71,7 @@ public class ChatService {
 
         List<PublicChat> publicChats = publicChatRepository.findByUsers(user);
         List<PrivateChat> pChat = privateChatRepository.findAllByUser1OrUser2(user, user);
-        log.info(pChat);
+
         List<ViewChatResponse> dtos = new ArrayList<>();
         publicChats.forEach(chat -> dtos.add(ViewChatResponse.builder()
                 .id(chat.getId())
@@ -260,7 +260,7 @@ public class ChatService {
             put("user", user.getUsername());
             put("text", message.getText());
         }});
-        log.info(message.getId());
+
         return MessageResponse.builder()
                 .id(message.getId())
                 .text(message.getText())

@@ -1,7 +1,7 @@
 package ru.ncti.backend.util;
 
 import lombok.RequiredArgsConstructor;
-import lombok.extern.log4j.Log4j;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.messaging.SessionSubscribeEvent;
@@ -13,7 +13,7 @@ import java.util.Objects;
 /**
  * user: ichuvilin
  */
-@Log4j
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class WebSocketEventListener {
@@ -27,7 +27,6 @@ public class WebSocketEventListener {
         String name = Objects.requireNonNull(event.getUser()).getName();
         redisService.setValue("user:" + name, uuid);
         redisService.setValueSet(uuid, name);
-        log.info(event);
     }
 
     @EventListener
@@ -37,7 +36,6 @@ public class WebSocketEventListener {
         String chat = redisService.getValue(key);
         redisService.deleteValue(key);
         redisService.deleteValueSet(chat, name);
-        log.info(event);
     }
 
     // todo: handler for event to disconnect

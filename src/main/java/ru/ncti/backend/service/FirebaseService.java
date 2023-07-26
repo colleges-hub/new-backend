@@ -8,7 +8,7 @@ import com.google.firebase.messaging.Message;
 import com.google.firebase.messaging.MulticastMessage;
 import com.google.firebase.messaging.Notification;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.log4j.Log4j;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,7 +39,7 @@ import static ru.ncti.backend.config.RabbitConfig.UPDATE_SCHEDULE;
  * user: ichuvilin
  */
 @Service
-@Log4j
+@Slf4j
 @RequiredArgsConstructor
 public class FirebaseService {
 
