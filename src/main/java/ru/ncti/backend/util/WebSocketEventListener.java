@@ -26,6 +26,7 @@ public class WebSocketEventListener {
                 .getHeaders().get("simpDestination")).toString().split("/")[3].trim();
         String name = Objects.requireNonNull(event.getUser()).getName();
         redisService.setValue("user:" + name, uuid);
+        log.info(String.valueOf(event.getMessage().getHeaders().get("simpSessionId")));
         redisService.setValueSet(uuid, name);
     }
 

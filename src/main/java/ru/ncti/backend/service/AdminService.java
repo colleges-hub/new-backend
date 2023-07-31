@@ -257,11 +257,20 @@ public class AdminService {
                         .build()).toList();
     }
 
-    public List<UserResponse> getTeachers() {
-        Role role = roleRepository.findByName("ROLE_TEACHER")
-                .orElseThrow(() -> new IllegalArgumentException("Role not found"));
-        return userRepository.findAllByRoles(role)
-                .stream().map(user -> UserResponse.builder()
+
+    public List<UserResponse> getUsersByType(String type) {
+        Role role = null;
+        if (type.equalsIgnoreCase("student")) {
+            role = roleRepository.findByName("ROLE_STUDENT")
+                    .orElseThrow(() -> new IllegalArgumentException("Role not found"));
+        } else if (type.equalsIgnoreCase("teacher")) {
+            role = roleRepository.findByName("ROLE_TEACHER")
+                    .orElseThrow(() -> new IllegalArgumentException("Role not found"));
+        }
+        assert role != null;
+
+        return userRepository.findAllByRolesOrderByLastname(role).stream().map(
+                user -> UserResponse.builder()
                         .id(user.getId())
                         .firstname(user.getFirstname())
                         .lastname(user.getLastname())
@@ -302,7 +311,7 @@ public class AdminService {
     }
 
     public List<Subject> getSubjects() {
-        return subjectRepository.findAll();
+        return subjectRepository.findAllByOrderByName();
     }
 
     public Subject getSubjectById(Long id) {
@@ -368,11 +377,9 @@ public class AdminService {
     private void createEmailNotification(User dto, String password) {
         EmailResponse email = EmailResponse.builder()
                 .to(dto.getEmail())
-                .subject("Добро пожаловать в мобильное приложение.")
+                .subject("Добро пожаловать в приложение для колледжа!")
                 .template("welcome-email.html")
                 .properties(new HashMap<>() {{
-                    put("name", dto.getFirstname());
-                    put("subscriptionDate", LocalDate.now().toString());
                     put("login", dto.getUsername());
                     put("password", password);
                 }})

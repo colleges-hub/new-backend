@@ -45,7 +45,39 @@ public class AdminController {
         return ResponseEntity.status(HttpStatus.OK).body(adminService.getProfile());
     }
 
-    // todo: think
+
+    @GetMapping("/users")
+    public ResponseEntity<List<UserResponse>> getUsersByType(@RequestParam("type") String type) {
+        return ResponseEntity.status(HttpStatus.OK).body(adminService.getUsersByType(type));
+    }
+
+    @GetMapping("/users/{id}")
+    public ResponseEntity<UserResponse> getUserById(@PathVariable("id") Long id) {
+        return ResponseEntity.status(HttpStatus.OK).body(adminService.getUserById(id));
+    }
+
+    @GetMapping("/groups")
+    public ResponseEntity<List<GroupResponse>> getGroups() {
+        return ResponseEntity.status(HttpStatus.OK).body(adminService.getGroups());
+    }
+
+    @GetMapping("/groups/{id}")
+    public ResponseEntity<Group> getGroupById(@PathVariable("id") Long id) {
+        return ResponseEntity.status(HttpStatus.OK).body(adminService.getGroupById(id));
+    }
+
+    @GetMapping("/subjects")
+    public ResponseEntity<List<Subject>> getSubjects() {
+        return ResponseEntity.status(HttpStatus.OK).body(adminService.getSubjects());
+    }
+
+    @GetMapping("/subjects/{id}")
+    public ResponseEntity<Subject> getSubjectById(@PathVariable("id") Long id) {
+        return ResponseEntity.status(HttpStatus.OK).body(adminService.getSubjectById(id));
+    }
+
+
+    // todo: all rework
     @PatchMapping("/update")
     public ResponseEntity<String> updateProfile(@RequestBody AuthRequest dto) {
         return ResponseEntity.status(HttpStatus.OK).body(adminService.updateProfile(dto));
@@ -106,36 +138,6 @@ public class AdminController {
     @GetMapping("/students")
     public ResponseEntity<List<UserResponse>> getStudents(@RequestParam("group") Long group) {
         return ResponseEntity.status(HttpStatus.OK).body(adminService.getStudentsByGroup(group));
-    }
-
-    @GetMapping("/teachers")
-    public ResponseEntity<List<UserResponse>> getTeachers() {
-        return ResponseEntity.status(HttpStatus.OK).body(adminService.getTeachers());
-    }
-
-    @GetMapping("/groups")
-    public ResponseEntity<List<GroupResponse>> getGroups() {
-        return ResponseEntity.status(HttpStatus.OK).body(adminService.getGroups());
-    }
-
-    @GetMapping("/user/{id}")
-    public ResponseEntity<UserResponse> getUserById(@PathVariable("id") Long id) {
-        return ResponseEntity.status(HttpStatus.OK).body(adminService.getUserById(id));
-    }
-
-    @GetMapping("/groups/{id}")
-    public ResponseEntity<Group> getGroupById(@PathVariable("id") Long id) {
-        return ResponseEntity.status(HttpStatus.OK).body(adminService.getGroupById(id));
-    }
-
-    @GetMapping("/subjects")
-    public ResponseEntity<List<Subject>> getSubjects() {
-        return ResponseEntity.status(HttpStatus.OK).body(adminService.getSubjects());
-    }
-
-    @GetMapping("/subjects/{id}")
-    public ResponseEntity<Subject> getSubjectById(@PathVariable("id") Long id) {
-        return ResponseEntity.status(HttpStatus.OK).body(adminService.getSubjectById(id));
     }
 
     @DeleteMapping("/students/{id}")

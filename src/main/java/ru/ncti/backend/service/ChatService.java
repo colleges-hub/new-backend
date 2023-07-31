@@ -30,6 +30,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static ru.ncti.backend.config.RabbitConfig.PRIVATE_CHAT_NOTIFICATION;
+import static ru.ncti.backend.config.RabbitConfig.PUBLIC_CHAT_NOTIFICATION;
 
 
 /**
@@ -142,6 +143,10 @@ public class ChatService {
     }
 
 
+//    public MessageResponse sendPhotoToPrivate() {
+//
+//    }
+
     @Transactional(readOnly = false)
     public MessageResponse sendToPublic(UUID id, MessageRequest dto, Principal principal) {
         PublicChat publicChat = publicChatRepository.findById(id)
@@ -154,16 +159,17 @@ public class ChatService {
                 .publicChat(publicChat)
                 .sender(user)
                 .text(dto.getText())
+                .type("text")
                 .createdAt(Instant.now())
                 .build();
 
         messageRepository.save(message);
 
-//        rabbitTemplate.convertAndSend(PUBLIC_CHAT_NOTIFICATION, new HashMap<>() {{
-//            put("chat", id);
-//            put("user", user.getUsername());
-//            put("text", dto.getText());
-//        }});
+        rabbitTemplate.convertAndSend(PUBLIC_CHAT_NOTIFICATION, new HashMap<>() {{
+            put("chat", id);
+            put("user", user.getUsername());
+            put("text", dto.getText());
+        }});
 
         return MessageResponse.builder()
                 .id(message.getId())
@@ -192,6 +198,7 @@ public class ChatService {
                     .sender(user)
                     .text(dto.getText())
                     .privateChat(privateChat)
+                    .type("type")
                     .createdAt(Instant.now())
                     .build();
 
@@ -210,6 +217,7 @@ public class ChatService {
                 Message message = Message.builder()
                         .sender(first)
                         .text(dto.getText())
+                        .type("text")
                         .createdAt(Instant.now())
                         .build();
 

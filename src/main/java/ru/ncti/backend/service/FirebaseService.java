@@ -106,7 +106,8 @@ public class FirebaseService {
         User user = userRepository.findByEmail(map.get("user"))
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-        PrivateChat chat = privateChatRepository.findById(UUID.fromString(map.get("chat"))).orElseThrow(null);
+        PrivateChat chat = privateChatRepository.findById(UUID.fromString(map.get("chat")))
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
         User user2 = chat.getChatName(user);
 

@@ -40,6 +40,9 @@ public class Message {
     @ManyToOne(targetEntity = User.class, cascade = {CascadeType.ALL})
     private User sender;
 
+    @Column(name = "type")
+    private String type;
+
     @ManyToOne(targetEntity = PublicChat.class, cascade = {CascadeType.ALL}, fetch = FetchType.LAZY)
     private PublicChat publicChat;
 
