@@ -22,6 +22,7 @@ import ru.ncti.backend.api.request.TemplateRequest;
 import ru.ncti.backend.api.request.UserRequest;
 import ru.ncti.backend.api.response.GroupResponse;
 import ru.ncti.backend.api.response.ScheduleResponse;
+import ru.ncti.backend.api.response.SpecialityResponse;
 import ru.ncti.backend.api.response.UserResponse;
 import ru.ncti.backend.model.Group;
 import ru.ncti.backend.model.Subject;
@@ -56,6 +57,25 @@ public class AdminController {
         return ResponseEntity.status(HttpStatus.OK).body(adminService.getUserById(id));
     }
 
+    @PostMapping("/users")
+    public ResponseEntity<String> createUser(@RequestBody UserRequest dto) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(adminService.createUser(dto));
+    }
+
+    @PostMapping("/upload-users")
+    public ResponseEntity<String> uploadUsers(@RequestParam("file") MultipartFile file) {
+        try {
+            return ResponseEntity.status(HttpStatus.OK).body(adminService.uploadUsers(file));
+        } catch (IOException | CsvValidationException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
+    }
+
+    @GetMapping("/roles")
+    public ResponseEntity<?> getRoles(){
+        return ResponseEntity.status(HttpStatus.OK).body(adminService.getRoles());
+    }
+
     @GetMapping("/groups")
     public ResponseEntity<List<GroupResponse>> getGroups() {
         return ResponseEntity.status(HttpStatus.OK).body(adminService.getGroups());
@@ -76,6 +96,19 @@ public class AdminController {
         return ResponseEntity.status(HttpStatus.OK).body(adminService.getSubjectById(id));
     }
 
+    @GetMapping("/specialities")
+    public ResponseEntity<List<SpecialityResponse>> getSpecialities() {
+        return ResponseEntity.status(HttpStatus.OK).body(adminService.getSpecialities());
+    }
+
+    @PostMapping("/group")
+    public ResponseEntity<String> createGroup(@RequestBody GroupRequest request) {
+        try {
+            return ResponseEntity.status(HttpStatus.CREATED).body(adminService.createGroup(request));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
+    }
 
     // todo: all rework
     @PatchMapping("/update")
@@ -83,32 +116,10 @@ public class AdminController {
         return ResponseEntity.status(HttpStatus.OK).body(adminService.updateProfile(dto));
     }
 
-    @PostMapping("/create-user")
-    public ResponseEntity<String> createUser(@RequestBody UserRequest dto) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(adminService.createUser(dto));
-    }
-
-    @PostMapping("/upload-users")
-    public ResponseEntity<String> uploadUsers(@RequestParam("file") MultipartFile file) {
-        try {
-            return ResponseEntity.status(HttpStatus.OK).body(adminService.uploadUsers(file));
-        } catch (IOException | CsvValidationException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        }
-    }
 
     @PostMapping("/create-speciality")
     public ResponseEntity<String> createSpeciality(@RequestBody SpecialityRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(adminService.createSpeciality(request));
-    }
-
-    @PostMapping("/create-group")
-    public ResponseEntity<String> createGroup(@RequestBody GroupRequest request) {
-        try {
-            return ResponseEntity.status(HttpStatus.CREATED).body(adminService.createGroup(request));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        }
     }
 
     @PostMapping("/create-template")

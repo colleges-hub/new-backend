@@ -2,7 +2,6 @@ package ru.ncti.backend.api.request;
 
 import lombok.Getter;
 import lombok.Setter;
-import lombok.ToString;
 
 import java.util.List;
 
@@ -11,7 +10,6 @@ import java.util.List;
  */
 @Getter
 @Setter
-@ToString
 public class UserRequest {
     private String firstname;
     private String lastname;
@@ -19,5 +17,4 @@ public class UserRequest {
     private String email;
     private String group;
     private List<String> role;
-    private String password;
 }

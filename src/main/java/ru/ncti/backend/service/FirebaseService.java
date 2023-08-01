@@ -10,6 +10,7 @@ import com.google.firebase.messaging.Notification;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.ncti.backend.api.response.ViewChatResponse;
@@ -53,6 +54,7 @@ public class FirebaseService {
     private final ObjectMapper objectMapper;
     private final GroupRepository groupRepository;
 
+    @Async
     @RabbitListener(queues = PUBLIC_CHAT_NOTIFICATION)
     @Transactional(readOnly = true)
     public void sendPublicNotification(Map<String, String> map) throws FirebaseMessagingException, JsonProcessingException {
@@ -100,6 +102,7 @@ public class FirebaseService {
         }
     }
 
+    @Async
     @RabbitListener(queues = PRIVATE_CHAT_NOTIFICATION)
     @Transactional(readOnly = true)
     public void sendPrivateNotification(Map<String, String> map) throws FirebaseMessagingException, JsonProcessingException {
@@ -134,6 +137,7 @@ public class FirebaseService {
         }
     }
 
+    @Async
     @RabbitListener(queues = UPDATE_SCHEDULE)
     public void sendNotificationAboutChanges(Map<String, ?> map) throws FirebaseMessagingException {
         Group group = groupRepository.findByName(map.get("group").toString())

@@ -23,7 +23,9 @@ import ru.ncti.backend.api.request.UploadUserRequest;
 import ru.ncti.backend.api.request.UserRequest;
 import ru.ncti.backend.api.response.EmailResponse;
 import ru.ncti.backend.api.response.GroupResponse;
+import ru.ncti.backend.api.response.RoleResponse;
 import ru.ncti.backend.api.response.ScheduleResponse;
+import ru.ncti.backend.api.response.SpecialityResponse;
 import ru.ncti.backend.api.response.UserResponse;
 import ru.ncti.backend.model.Group;
 import ru.ncti.backend.model.Role;
@@ -48,6 +50,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
@@ -116,11 +119,11 @@ public class AdminService {
                     .orElseThrow(() -> new IllegalArgumentException(String.format("Group %s not found", dto.getGroup())));
             user.setGroup(group);
         }
-
+        String randomPass = UUID.randomUUID().toString();
         user.setRoles(roles);
-        user.setPassword(passwordEncoder.encode(dto.getPassword()));
+        user.setPassword(passwordEncoder.encode(randomPass));
         userRepository.save(user);
-        createEmailNotification(user, dto.getPassword());
+        createEmailNotification(user, randomPass);
         return "User was added";
     }
 
@@ -139,8 +142,20 @@ public class AdminService {
             throw new IllegalArgumentException(String.format("Group %s already exist", request.getName()));
         }
         Group group = convert(request, Group.class);
+        Speciality speciality = specialityRepository.findById(request.getSpeciality())
+                .orElseThrow(() -> new IllegalArgumentException(String.format("Speciality %s not found", request.getSpeciality())));
+        group.setSpeciality(speciality);
         groupRepository.save(group);
         return "Группа успешно создана";
+    }
+
+    public List<RoleResponse> getRoles() {
+        return roleRepository.findAll().stream().map(
+                role -> RoleResponse.builder()
+                        .id(role.getId())
+                        .name(role.getDescription())
+                        .build()
+        ).toList();
     }
 
     public String createTemplate(TemplateRequest request) {
@@ -328,6 +343,15 @@ public class AdminService {
 
         userRepository.delete(student);
         return "User successfully deleted";
+    }
+
+    public List<SpecialityResponse> getSpecialities() {
+        return specialityRepository.findAll().stream().map(
+                speciality -> SpecialityResponse.builder()
+                        .id(speciality.getId())
+                        .name(speciality.getName())
+                        .build()
+        ).toList();
     }
 
     //todo
