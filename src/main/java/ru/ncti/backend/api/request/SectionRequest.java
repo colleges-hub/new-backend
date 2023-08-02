@@ -8,9 +8,7 @@ import lombok.Setter;
  */
 @Getter
 @Setter
-public class GroupRequest {
+public class SectionRequest {
     private String name;
-    private String speciality;
-    private Integer course;
-    private String section;
+    private String email;
 }

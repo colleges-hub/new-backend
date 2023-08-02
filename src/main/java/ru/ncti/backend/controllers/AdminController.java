@@ -16,12 +16,14 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import ru.ncti.backend.api.request.AuthRequest;
 import ru.ncti.backend.api.request.GroupRequest;
+import ru.ncti.backend.api.request.SectionRequest;
 import ru.ncti.backend.api.request.SpecialityRequest;
 import ru.ncti.backend.api.request.SubjectRequest;
 import ru.ncti.backend.api.request.TemplateRequest;
 import ru.ncti.backend.api.request.UserRequest;
 import ru.ncti.backend.api.response.GroupResponse;
 import ru.ncti.backend.api.response.ScheduleResponse;
+import ru.ncti.backend.api.response.SectionResponse;
 import ru.ncti.backend.api.response.SpecialityResponse;
 import ru.ncti.backend.api.response.UserResponse;
 import ru.ncti.backend.model.Group;
@@ -72,7 +74,7 @@ public class AdminController {
     }
 
     @GetMapping("/roles")
-    public ResponseEntity<?> getRoles(){
+    public ResponseEntity<?> getRoles() {
         return ResponseEntity.status(HttpStatus.OK).body(adminService.getRoles());
     }
 
@@ -99,6 +101,16 @@ public class AdminController {
     @GetMapping("/specialities")
     public ResponseEntity<List<SpecialityResponse>> getSpecialities() {
         return ResponseEntity.status(HttpStatus.OK).body(adminService.getSpecialities());
+    }
+
+    @GetMapping("/sections")
+    public ResponseEntity<List<SectionResponse>> getSections() {
+        return ResponseEntity.status(HttpStatus.OK).body(adminService.getSections());
+    }
+
+    @PostMapping("/sections")
+    public ResponseEntity<String> createSection(@RequestBody SectionRequest request) {
+        return ResponseEntity.status(HttpStatus.OK).body(adminService.createSection(request));
     }
 
     @PostMapping("/group")

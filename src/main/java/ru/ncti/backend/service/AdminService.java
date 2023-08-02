@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import ru.ncti.backend.api.request.AuthRequest;
 import ru.ncti.backend.api.request.GroupRequest;
+import ru.ncti.backend.api.request.SectionRequest;
 import ru.ncti.backend.api.request.SpecialityRequest;
 import ru.ncti.backend.api.request.SubjectRequest;
 import ru.ncti.backend.api.request.TemplateRequest;
@@ -25,17 +26,20 @@ import ru.ncti.backend.api.response.EmailResponse;
 import ru.ncti.backend.api.response.GroupResponse;
 import ru.ncti.backend.api.response.RoleResponse;
 import ru.ncti.backend.api.response.ScheduleResponse;
+import ru.ncti.backend.api.response.SectionResponse;
 import ru.ncti.backend.api.response.SpecialityResponse;
 import ru.ncti.backend.api.response.UserResponse;
 import ru.ncti.backend.model.Group;
 import ru.ncti.backend.model.Role;
 import ru.ncti.backend.model.Sample;
+import ru.ncti.backend.model.Section;
 import ru.ncti.backend.model.Speciality;
 import ru.ncti.backend.model.Subject;
 import ru.ncti.backend.model.User;
 import ru.ncti.backend.repository.GroupRepository;
 import ru.ncti.backend.repository.RoleRepository;
 import ru.ncti.backend.repository.SampleRepository;
+import ru.ncti.backend.repository.SectionRepository;
 import ru.ncti.backend.repository.SpecialityRepository;
 import ru.ncti.backend.repository.SubjectRepository;
 import ru.ncti.backend.repository.UserRepository;
@@ -73,6 +77,7 @@ public class AdminService {
     private final SpecialityRepository specialityRepository;
     private final SubjectRepository subjectRepository;
     private final SampleRepository sampleRepository;
+    private final SectionRepository sectionRepository;
     private final RabbitTemplate rabbitTemplate;
 
 
@@ -87,22 +92,6 @@ public class AdminService {
         log.info(String.format("Admin %s show your profile", user.getUsername()));
 
         return response;
-    }
-
-    // TODO: all rework
-    public String updateProfile(AuthRequest dto) {
-        var auth = SecurityContextHolder.getContext().getAuthentication();
-        User user = (User) auth.getPrincipal();
-
-        if (dto.getUsername() != null) {
-            user.setEmail(dto.getUsername());
-        }
-        if (dto.getPassword() != null) {
-            user.setPassword(passwordEncoder.encode(dto.getPassword()));
-        }
-
-        userRepository.save(user);
-        return "Data updated";
     }
 
     @Transactional(readOnly = false)
@@ -127,13 +116,19 @@ public class AdminService {
         return "User was added";
     }
 
-    public String createSpeciality(SpecialityRequest dto) {
-        if (specialityRepository.findById(dto.getId()).isPresent()) {
-            log.error(String.format("Speciality %s already exist", dto.getName()));
-            throw new IllegalArgumentException(String.format("Speciality %s already exist", dto.getName()));
-        }
-        specialityRepository.save(convert(dto, Speciality.class));
-        return "Speciality was added";
+    public List<SectionResponse> getSections() {
+        return sectionRepository.findAll().stream().map(
+                section -> SectionResponse.builder()
+                        .name(section.getName())
+                        .email(section.getEmail())
+                        .build()
+        ).toList();
+    }
+
+    public String createSection(SectionRequest request) {
+        Section section = modelMapper.map(request, Section.class);
+        sectionRepository.save(section);
+        return "Section was added";
     }
 
     public String createGroup(GroupRequest request) {
@@ -141,10 +136,16 @@ public class AdminService {
             log.error(String.format("Group %s already exist", request.getName()));
             throw new IllegalArgumentException(String.format("Group %s already exist", request.getName()));
         }
-        Group group = convert(request, Group.class);
+        Group group = new Group();
+        group.setName(request.getName());
+        group.setCourse(request.getCourse());
         Speciality speciality = specialityRepository.findById(request.getSpeciality())
                 .orElseThrow(() -> new IllegalArgumentException(String.format("Speciality %s not found", request.getSpeciality())));
+        Section section = sectionRepository.findByName(request.getSection())
+                .orElseThrow(() -> new IllegalArgumentException(String.format("Section %s not found", request.getSpeciality())));
+        log.info(section.getName());
         group.setSpeciality(speciality);
+        group.setSection(section);
         groupRepository.save(group);
         return "Группа успешно создана";
     }
@@ -156,6 +157,35 @@ public class AdminService {
                         .name(role.getDescription())
                         .build()
         ).toList();
+    }
+
+    public List<Subject> getSubjects() {
+        return subjectRepository.findAllByOrderByName();
+    }
+
+    // TODO: all rework
+    public String updateProfile(AuthRequest dto) {
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        User user = (User) auth.getPrincipal();
+
+        if (dto.getUsername() != null) {
+            user.setEmail(dto.getUsername());
+        }
+        if (dto.getPassword() != null) {
+            user.setPassword(passwordEncoder.encode(dto.getPassword()));
+        }
+
+        userRepository.save(user);
+        return "Data updated";
+    }
+
+    public String createSpeciality(SpecialityRequest dto) {
+        if (specialityRepository.findById(dto.getId()).isPresent()) {
+            log.error(String.format("Speciality %s already exist", dto.getName()));
+            throw new IllegalArgumentException(String.format("Speciality %s already exist", dto.getName()));
+        }
+        specialityRepository.save(convert(dto, Speciality.class));
+        return "Speciality was added";
     }
 
     public String createTemplate(TemplateRequest request) {
@@ -323,10 +353,6 @@ public class AdminService {
         g.setSample(getTypeSchedule(g));
 
         return g;
-    }
-
-    public List<Subject> getSubjects() {
-        return subjectRepository.findAllByOrderByName();
     }
 
     public Subject getSubjectById(Long id) {
