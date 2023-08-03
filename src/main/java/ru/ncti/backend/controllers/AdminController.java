@@ -122,26 +122,26 @@ public class AdminController {
         }
     }
 
+
+    @PostMapping("/subject")
+    public ResponseEntity<String> createSubject(@RequestBody SubjectRequest request) {
+        return ResponseEntity.status(HttpStatus.OK).body(adminService.createSubject(request));
+    }
+
+    @PostMapping("/speciality")
+    public ResponseEntity<String> createSpeciality(@RequestBody SpecialityRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(adminService.createSpeciality(request));
+    }
+
     // todo: all rework
     @PatchMapping("/update")
     public ResponseEntity<String> updateProfile(@RequestBody AuthRequest dto) {
         return ResponseEntity.status(HttpStatus.OK).body(adminService.updateProfile(dto));
     }
 
-
-    @PostMapping("/create-speciality")
-    public ResponseEntity<String> createSpeciality(@RequestBody SpecialityRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(adminService.createSpeciality(request));
-    }
-
     @PostMapping("/create-template")
     public ResponseEntity<String> createTemplate(@RequestBody TemplateRequest request) {
         return ResponseEntity.status(HttpStatus.OK).body(adminService.createTemplate(request));
-    }
-
-    @PostMapping("/create-subject")
-    public ResponseEntity<String> createSubject(@RequestBody SubjectRequest request) {
-        return ResponseEntity.status(HttpStatus.OK).body(adminService.createSubject(request));
     }
 
     @PostMapping("/upload-schedule")

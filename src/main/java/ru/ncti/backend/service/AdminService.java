@@ -147,7 +147,7 @@ public class AdminService {
         group.setSpeciality(speciality);
         group.setSection(section);
         groupRepository.save(group);
-        return "Группа успешно создана";
+        return "Group was added";
     }
 
     public List<RoleResponse> getRoles() {
