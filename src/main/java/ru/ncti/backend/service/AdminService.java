@@ -44,9 +44,12 @@ import ru.ncti.backend.repository.SpecialityRepository;
 import ru.ncti.backend.repository.SubjectRepository;
 import ru.ncti.backend.repository.UserRepository;
 
+import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.temporal.WeekFields;
 import java.util.HashMap;
@@ -229,59 +232,66 @@ public class AdminService {
 
     @Transactional(readOnly = false)
     public String uploadUsers(MultipartFile file) throws IOException, CsvValidationException {
-        CSVReader csvReader = new CSVReader(new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8));
-        List<UploadUserRequest> users = new CsvToBeanBuilder<UploadUserRequest>(csvReader)
-                .withType(UploadUserRequest.class).build().parse();
 
-        List<CompletableFuture<Void>> futures = users.stream()
-                .map(user -> CompletableFuture.runAsync(() -> {
-                    try {
-                        UserRequest usr = convert(user, UserRequest.class);
-                        usr.setRole(List.of(user.getRole()));
-                        createUser(usr);
-                    } catch (IllegalArgumentException e) {
-                        log.error(e.getMessage());
-                        throw new IllegalArgumentException(e);
-                    }
-                })).toList();
+        try (InputStream inputStream = file.getInputStream()) {
+            CSVReader csvReader = new CSVReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
+            List<UploadUserRequest> users = new CsvToBeanBuilder<UploadUserRequest>(csvReader)
+                    .withType(UploadUserRequest.class).build().parse();
 
-        CompletableFuture<Void> allFutures = CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
-        allFutures.join();
-        csvReader.close();
+            List<CompletableFuture<Void>> futures = users.stream()
+                    .map(user -> CompletableFuture.runAsync(() -> {
+                        try {
+                            UserRequest usr = convert(user, UserRequest.class);
+                            usr.setRole(List.of(user.getRole()));
+                            createUser(usr);
+                        } catch (IllegalArgumentException e) {
+                            log.error(e.getMessage());
+                            throw new IllegalArgumentException(e);
+                        }
+                    })).toList();
+
+            CompletableFuture<Void> allFutures = CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
+            allFutures.join();
+            csvReader.close();
+        }
+
         return "Uploaded users";
     }
 
-    public String uploadSchedule(MultipartFile file) throws IOException {
-        CSVReader csvReader = new CSVReader(new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8));
-        List<UploadTemplateRequest> schedule = new CsvToBeanBuilder<UploadTemplateRequest>(csvReader)
-                .withType(UploadTemplateRequest.class).build().parse();
+    public String uploadTemplate(MultipartFile file) throws IOException {
 
-        List<CompletableFuture<Void>> futures = schedule.stream()
-                .map(s -> CompletableFuture.runAsync(() -> {
-                    Group g = groupRepository.findByName(s.getGroup())
-                            .orElseThrow(() -> {
-                                log.error(String.format("Group %s not found", s.getGroup()));
-                                return new IllegalArgumentException(String.format("Group %s not found", s.getGroup()));
-                            });
-                    String[] teacherName = s.getTeacher().split(" ");
-                    User t = userRepository.findByLastnameAndFirstname(teacherName[0], teacherName[1])
-                            .orElseThrow(() -> {
-                                log.error(String.format("Teacher %s not found", s.getTeacher()));
-                                return new IllegalArgumentException(String.format("Teacher %s not found", s.getTeacher()));
-                            });
+        try (InputStream inputStream = file.getInputStream()) {
+            CSVReader csvReader = new CSVReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
+            List<UploadTemplateRequest> schedule = new CsvToBeanBuilder<UploadTemplateRequest>(csvReader)
+                    .withType(UploadTemplateRequest.class).build().parse();
 
-                    Sample sch = convert(s, Sample.class);
-                    Subject subject = subjectRepository.findByName(s.getSubject()).orElse(null);
-                    sch.setGroup(g);
-                    sch.setTeacher(t);
-                    sch.setParity(s.getWeekType());
-                    sch.setSubject(subject);
-                    sampleRepository.save(sch);
-                })).toList();
+            List<CompletableFuture<Void>> futures = schedule.stream()
+                    .map(s -> CompletableFuture.runAsync(() -> {
+                        Group g = groupRepository.findByName(s.getGroup())
+                                .orElseThrow(() -> {
+                                    log.error(String.format("Group %s not found", s.getGroup()));
+                                    return new IllegalArgumentException(String.format("Group %s not found", s.getGroup()));
+                                });
+                        String[] teacherName = s.getTeacher().split(" ");
+                        User t = userRepository.findByLastnameAndFirstname(teacherName[0], teacherName[1])
+                                .orElseThrow(() -> {
+                                    log.error(String.format("Teacher %s not found", s.getTeacher()));
+                                    return new IllegalArgumentException(String.format("Teacher %s not found", s.getTeacher()));
+                                });
 
-        CompletableFuture<Void> allFutures = CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
-        allFutures.join();
-        csvReader.close();
+                        Sample sch = convert(s, Sample.class);
+                        Subject subject = subjectRepository.findByName(s.getSubject()).orElse(null);
+                        sch.setGroup(g);
+                        sch.setTeacher(t);
+                        sch.setParity(s.getWeekType());
+                        sch.setSubject(subject);
+                        sampleRepository.save(sch);
+                    })).toList();
+
+            CompletableFuture<Void> allFutures = CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
+            allFutures.join();
+            csvReader.close();
+        }
 
         return "Uploaded schedule";
     }

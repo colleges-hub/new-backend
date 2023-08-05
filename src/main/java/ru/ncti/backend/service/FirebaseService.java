@@ -80,7 +80,8 @@ public class FirebaseService {
             Set<String> fcmTokens = new HashSet<>();
 
             for (User userOff : userOffline) {
-                fcmTokens.add(userOff.getDeviceId());
+                if (userOff.getDeviceId() != null)
+                    fcmTokens.add(userOff.getDeviceId());
             }
 
             if (!fcmTokens.isEmpty()) {

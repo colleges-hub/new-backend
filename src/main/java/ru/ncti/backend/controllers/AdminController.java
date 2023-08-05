@@ -122,7 +122,6 @@ public class AdminController {
         }
     }
 
-
     @PostMapping("/subject")
     public ResponseEntity<String> createSubject(@RequestBody SubjectRequest request) {
         return ResponseEntity.status(HttpStatus.OK).body(adminService.createSubject(request));
@@ -132,6 +131,7 @@ public class AdminController {
     public ResponseEntity<String> createSpeciality(@RequestBody SpecialityRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(adminService.createSpeciality(request));
     }
+
 
     // todo: all rework
     @PatchMapping("/update")
@@ -145,9 +145,9 @@ public class AdminController {
     }
 
     @PostMapping("/upload-schedule")
-    public ResponseEntity<String> uploadSchedule(@RequestParam("file") MultipartFile file) {
+    public ResponseEntity<String> uploadTemplate(@RequestParam("file") MultipartFile file) {
         try {
-            return ResponseEntity.status(HttpStatus.OK).body(adminService.uploadSchedule(file));
+            return ResponseEntity.status(HttpStatus.OK).body(adminService.uploadTemplate(file));
         } catch (IOException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
@@ -163,13 +163,8 @@ public class AdminController {
         return ResponseEntity.status(HttpStatus.OK).body(adminService.getStudentsByGroup(group));
     }
 
-    @DeleteMapping("/students/{id}")
+    @DeleteMapping("/users/{id}")
     public ResponseEntity<String> deleteStudentById(@PathVariable("id") Long id) {
-        return ResponseEntity.status(HttpStatus.OK).body(adminService.deleteUserById(id));
-    }
-
-    @DeleteMapping("/teachers/{id}")
-    public ResponseEntity<String> deleteTeacherById(@PathVariable("id") Long id) {
         return ResponseEntity.status(HttpStatus.OK).body(adminService.deleteUserById(id));
     }
 
