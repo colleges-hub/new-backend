@@ -3,6 +3,8 @@ package ru.ncti.backend.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -46,6 +48,14 @@ public class ChatService {
     private final MessageRepository messageRepository;
     private final PrivateChatRepository privateChatRepository;
     private final RabbitTemplate rabbitTemplate;
+    private final SimpMessagingTemplate simpMessagingTemplate;
+
+    @Value("${minio.url}")
+    private String host;
+
+    @Value("${minio.bucket-name}")
+    private String bucket;
+
 
     public String createPublicChat(ChatRequest request) {
         var auth = SecurityContextHolder.getContext().getAuthentication();
@@ -66,9 +76,11 @@ public class ChatService {
         return "Public Chat was created";
     }
 
-    public List<ViewChatResponse> getChatsFromUser() {
-        var auth = SecurityContextHolder.getContext().getAuthentication();
-        User user = (User) auth.getPrincipal();
+
+    public List<ViewChatResponse> getChatsForUser(Principal principal) {
+        String URL = String.format("http://%s:9000/%s/", host, bucket);
+
+        User user = userRepository.findByEmail(principal.getName()).orElseThrow(null);
 
         List<PublicChat> publicChats = publicChatRepository.findByUsers(user);
         List<PrivateChat> pChat = privateChatRepository.findAllByUser1OrUser2(user, user);
@@ -78,7 +90,7 @@ public class ChatService {
                 .id(chat.getId())
                 .name(chat.getName())
                 .type("PUBLIC")
-                .photo(chat.getPhoto())
+                .photo(URL + chat.getPhoto())
                 .build()));
 
         pChat.forEach(chat -> {
@@ -87,7 +99,7 @@ public class ChatService {
                     .id(chat.getId())
                     .name(String.format("%s %s", chatName.getFirstname(), chatName.getLastname()))
                     .type("PRIVATE")
-                    .photo(chatName.getPhoto())
+                    .photo(URL + chatName.getPhoto())
                     .build());
         });
 
@@ -95,13 +107,28 @@ public class ChatService {
     }
 
     @Transactional(readOnly = false)
-    public String addUsersToChats(UUID chatId, UsersRequest dto) {
-        PublicChat publicChat = publicChatRepository.findById(chatId)
+    public String addUsers(UUID chatId, UsersRequest dto) {
+        String URL = String.format("http://%s:9000/%s/", host, bucket);
+
+        PublicChat chat = publicChatRepository.findById(chatId)
                 .orElseThrow(() -> new IllegalArgumentException("Chat not found"));
 
-        dto.getIds().forEach(id -> publicChat.getUsers()
-                .add(userRepository.findById(id)
-                        .orElse(null)));
+        dto.getIds().forEach(id -> {
+                    User user = userRepository.findById(id)
+                            .orElse(null);
+                    if (user != null) {
+                        simpMessagingTemplate.convertAndSend("/topic/" + user.getUsername() + "/chats",
+                                List.of(ViewChatResponse.builder()
+                                        .id(chat.getId())
+                                        .name(chat.getName())
+                                        .type("PUBLIC")
+                                        .photo(URL + chat.getPhoto())
+                                        .build()));
+                    }
+                    chat.getUsers()
+                            .add(user);
+                }
+        );
 
         return "Users was added";
     }
@@ -127,25 +154,20 @@ public class ChatService {
 
     public List<MessageResponse> getMessageFromChat(UUID id, String type) {
         if (type.equals("PUBLIC")) {
-            PublicChat publicChat = publicChatRepository.findById(id)
+            PublicChat chat = publicChatRepository.findById(id)
                     .orElseThrow(() -> new IllegalArgumentException("Chat not found"));
-            List<Message> messages = messageRepository.findAllByPublicChatOrderByCreatedAtDesc(publicChat);
+            List<Message> messages = messageRepository.findAllByPublicChatOrderByCreatedAtAsc(chat);
 
             return generatedMessage(messages);
         } else if (type.equals("PRIVATE")) {
             PrivateChat chat = privateChatRepository.findById(id)
                     .orElseThrow(() -> new IllegalArgumentException("Chat not found"));
-            List<Message> messages = messageRepository.findAllByPrivateChatOrderByCreatedAtDesc(chat);
+            List<Message> messages = messageRepository.findAllByPrivateChatOrderByCreatedAtAsc(chat);
 
             return generatedMessage(messages);
         }
         return null;
     }
-
-
-//    public MessageResponse sendPhotoToPrivate() {
-//
-//    }
 
     @Transactional(readOnly = false)
     public MessageResponse sendToPublic(UUID id, MessageRequest dto, Principal principal) {
@@ -179,7 +201,7 @@ public class ChatService {
                         .id(String.valueOf(message.getSender().getId()))
                         .firstName(message.getSender().getFirstname())
                         .lastName(message.getSender().getLastname())
-                        .photo(message.getSender().getPhoto())
+                        .imageUrl(message.getSender().getPhoto())
                         .build())
                 .createdAt(message.getCreatedAt().toEpochMilli())
                 .build();
@@ -248,18 +270,40 @@ public class ChatService {
     }
 
     private List<MessageResponse> generatedMessage(List<Message> messages) {
-        return messages.stream().map(message -> MessageResponse.builder()
-                .id(message.getId())
-                .text(message.getText())
-                .type("text")
-                .author(UserMessageResponse.builder()
-                        .id(String.valueOf(message.getSender().getId()))
-                        .firstName(message.getSender().getFirstname())
-                        .lastName(message.getSender().getLastname())
-                        .photo(message.getSender().getPhoto())
-                        .build())
-                .createdAt(message.getCreatedAt().toEpochMilli())
-                .build()).toList();
+        String URL = String.format("http://%s:9000/%s/", host, bucket);
+        log.info(URL);
+        return messages.stream().map(message -> {
+            String photo = message.getSender().getPhoto() == null ? null : URL + message.getSender().getPhoto();
+            if (message.getType().equals("image")) {
+                return MessageResponse.builder()
+                        .id(message.getId())
+                        .uri(URL + message.getText())
+                        .name(message.getText())
+                        .type(message.getType())
+                        .size(message.getText().length())
+                        .author(UserMessageResponse.builder()
+                                .id(String.valueOf(message.getSender().getId()))
+                                .firstName(message.getSender().getFirstname())
+                                .lastName(message.getSender().getLastname())
+                                .imageUrl(photo)
+                                .build())
+                        .createdAt(message.getCreatedAt().toEpochMilli())
+                        .build();
+            } else {
+                return MessageResponse.builder()
+                        .id(message.getId())
+                        .text(message.getText())
+                        .type(message.getType())
+                        .author(UserMessageResponse.builder()
+                                .id(String.valueOf(message.getSender().getId()))
+                                .firstName(message.getSender().getFirstname())
+                                .lastName(message.getSender().getLastname())
+                                .imageUrl(photo)
+                                .build())
+                        .createdAt(message.getCreatedAt().toEpochMilli())
+                        .build();
+            }
+        }).toList();
     }
 
     private MessageResponse createMessage(Message message, User user) {
@@ -277,7 +321,7 @@ public class ChatService {
                         .id(String.valueOf(message.getSender().getId()))
                         .firstName(message.getSender().getFirstname())
                         .lastName(message.getSender().getLastname())
-                        .photo(message.getSender().getPhoto())
+                        .imageUrl(message.getSender().getPhoto())
                         .build())
                 .createdAt(message.getCreatedAt().toEpochMilli())
                 .build();

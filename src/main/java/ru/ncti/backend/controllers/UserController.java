@@ -14,9 +14,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.util.UriComponentsBuilder;
 import ru.ncti.backend.api.request.AuthRequest;
 import ru.ncti.backend.api.request.FCMRequest;
 import ru.ncti.backend.api.response.GroupResponse;
+import ru.ncti.backend.api.response.NewsResponse;
 import ru.ncti.backend.api.response.ScheduleResponse;
 import ru.ncti.backend.api.response.UserResponse;
 import ru.ncti.backend.service.UserService;
@@ -38,13 +40,6 @@ public class UserController {
 
     @Value("${url.news.getter}")
     private String urlNewsGetter;
-
-    @GetMapping("/news")
-    public ResponseEntity<?> getNews() {
-        return ResponseEntity.status(HttpStatus.OK).body(
-                restTemplate.getForEntity(urlNewsGetter, List.class).getBody()
-        );
-    }
 
     @GetMapping("/profile")
     public ResponseEntity<UserResponse> getProfile() {
@@ -76,7 +71,7 @@ public class UserController {
     }
 
     @GetMapping("/groups")
-    public ResponseEntity<List<GroupResponse>> getAllGroups() {
+    public ResponseEntity<List<GroupResponse>> getGroups() {
         return ResponseEntity.status(HttpStatus.OK).body(userService.getGroups());
     }
 
@@ -87,7 +82,7 @@ public class UserController {
 
     @GetMapping("/users")
     public ResponseEntity<?> getUsers(@RequestParam(defaultValue = "0") int page,
-                                                       @RequestParam(defaultValue = "10") int size) {
+                                      @RequestParam(defaultValue = "10") int size) {
         return ResponseEntity.status(HttpStatus.OK).body(userService.getUsersWithPagination(page, size));
     }
 
@@ -101,4 +96,19 @@ public class UserController {
         return ResponseEntity.status(HttpStatus.OK).body("QAQQ");
     }
 
+    @GetMapping("/news")
+    public ResponseEntity<?> getNews() {
+        return ResponseEntity.status(HttpStatus.OK).body(
+                restTemplate.getForEntity(urlNewsGetter, List.class).getBody()
+        );
+    }
+
+    @GetMapping("/news/url")
+    public ResponseEntity<?> getNewsByUrl(@RequestParam("path") String path) {
+        UriComponentsBuilder uriBuilder = UriComponentsBuilder.fromUriString(urlNewsGetter + "/url")
+                .queryParam("path", path);
+        return ResponseEntity.status(HttpStatus.OK).body(
+                restTemplate.getForEntity(uriBuilder.toUriString(), NewsResponse.class).getBody()
+        );
+    }
 }

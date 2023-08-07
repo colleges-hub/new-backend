@@ -8,12 +8,13 @@ import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.messaging.simp.annotation.SubscribeMapping;
+import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
 import ru.ncti.backend.api.request.ChatRequest;
 import ru.ncti.backend.api.request.MessageRequest;
 import ru.ncti.backend.api.request.UsersRequest;
@@ -28,7 +29,7 @@ import java.util.UUID;
 /**
  * user: ichuvilin
  */
-@RestController
+@Controller
 @RequestMapping("/chats")
 @RequiredArgsConstructor
 @Slf4j
@@ -37,10 +38,10 @@ public class ChatController {
     private final SimpMessagingTemplate simpMessagingTemplate;
     private final ChatService chatService;
 
-
-    @GetMapping()
-    public ResponseEntity<List<ViewChatResponse>> getChatsFromUser() {
-        return ResponseEntity.status(HttpStatus.OK).body(chatService.getChatsFromUser());
+    @SubscribeMapping("/topic/{email}/chats")
+    public void getChatsForUser(Principal principal) {
+        List<ViewChatResponse> views = chatService.getChatsForUser(principal);
+        simpMessagingTemplate.convertAndSend("/topic/" + principal.getName() + "/chats", views);
     }
 
     @PostMapping("/{chatId}/logout")
@@ -49,8 +50,8 @@ public class ChatController {
     }
 
     @PostMapping("/{chatId}")
-    public ResponseEntity<String> addUsersToChat(@PathVariable("chatId") UUID id, @RequestBody UsersRequest dto) {
-        return ResponseEntity.status(HttpStatus.OK).body(chatService.addUsersToChats(id, dto));
+    public ResponseEntity<String> addUsers(@PathVariable("chatId") UUID id, @RequestBody UsersRequest dto) {
+        return ResponseEntity.status(HttpStatus.OK).body(chatService.addUsers(id, dto));
     }
 
     @PostMapping("/create-public")

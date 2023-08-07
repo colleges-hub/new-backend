@@ -17,5 +17,8 @@ public class MessageResponse {
     private String text;
     private UserMessageResponse author;
     private Long createdAt;
+    private String uri;
+    private String name;
+    private Integer size;
     private String type;
 }

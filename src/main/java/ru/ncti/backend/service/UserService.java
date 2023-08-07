@@ -69,7 +69,7 @@ import static ru.ncti.backend.config.RabbitConfig.UPDATE_SCHEDULE;
 public class UserService {
 
     @Value("${minio.url}")
-    private String minioURL;
+    private String host;
 
     @Value("${minio.bucket-name}")
     private String bucketName;
@@ -88,6 +88,8 @@ public class UserService {
         var auth = SecurityContextHolder.getContext().getAuthentication();
         User user = (User) auth.getPrincipal();
 
+        String photo = user.getPhoto() != null ? String.format("http://%s:9000/%s/%s", host, bucketName, user.getPhoto()) : null;
+
         return UserResponse.builder()
                 .id(user.getId())
                 .firstname(user.getFirstname())
@@ -95,8 +97,7 @@ public class UserService {
                 .surname(user.getSurname())
                 .email(user.getUsername())
                 .role(user.getRoles())
-//                .photo(String.format("%s/%s", minioURL, user.getPhoto()))
-                .photo(user.getPhoto())
+                .photo(photo)
                 .build();
     }
 
@@ -241,6 +242,8 @@ public class UserService {
 
         PrivateChat privateChat = privateChatRepository.findByUser1AndUser2OrUser1AndUser2(currentUser, candidate, candidate, currentUser);
 
+        String photo = currentUser.getPhoto() != null ? String.format("http://%s:9000/%s/%s", host, bucketName, currentUser.getPhoto()) : null;
+
         return UserResponse.builder()
                 .id(candidate.getId())
                 .firstname(candidate.getFirstname())
@@ -249,7 +252,7 @@ public class UserService {
                 .email(candidate.getUsername())
                 .role(candidate.getRoles())
                 .chat(privateChat != null ? privateChat.getId().toString() : null)
-                .photo(candidate.getPhoto())
+                .photo(photo)
                 .build();
     }
 
@@ -403,43 +406,30 @@ public class UserService {
     private Set<ScheduleResponse> getTypeSchedule(Group group) {
         List<Sample> sample = sampleRepository.findAllByGroup(group);
         String currentWeekType = getCurrentWeekType();
-        Set<ScheduleResponse> set = new HashSet<>();
-
-        Map<String, List<String>> mergedTeachersMap = new HashMap<>();
+        Map<String, ScheduleResponse> mergedScheduleMap = new HashMap<>();
 
         sample.stream()
                 .filter(s -> s.getParity().equals("0") || s.getParity().equals(currentWeekType))
                 .forEach(s -> {
                     ScheduleResponse dto = convert(s);
-                    String key = dto.getDay() + "-" + dto.getNumberPair() + "-" + dto.getClassroom() + "-" + dto.getSubject();
-                    List<String> mergedTeachers = mergedTeachersMap.get(key);
-                    if (mergedTeachers != null) {
-                        mergedTeachers.addAll(dto.getData());
+                    String key = dto.getDay() + "-" + dto.getNumberPair() + "-" + dto.getSubject();
+                    ScheduleResponse mergedDto = mergedScheduleMap.get(key);
+
+                    if (mergedDto != null) {
+                        mergedDto.getData().addAll(dto.getData());
+                        mergedDto.setClassroom(mergedDto.getClassroom() + "/" + dto.getClassroom());
                     } else {
-                        mergedTeachers = new ArrayList<>(dto.getData());
-                        mergedTeachersMap.put(key, mergedTeachers);
+                        mergedDto = new ScheduleResponse();
+                        mergedDto.setDay(dto.getDay());
+                        mergedDto.setNumberPair(dto.getNumberPair());
+                        mergedDto.setSubject(dto.getSubject());
+                        mergedDto.setData(new ArrayList<>(dto.getData()));
+                        mergedDto.setClassroom(dto.getClassroom());
+                        mergedScheduleMap.put(key, mergedDto);
                     }
                 });
 
-        mergedTeachersMap.forEach((key, mergedTeachers) -> {
-            String[] parts = key.split("-");
-            String day = parts[0];
-            int numberPair = Integer.parseInt(parts[1]);
-            String classroom = parts[2];
-            String subject = parts[3];
-
-            ScheduleResponse mergedDto = ScheduleResponse.builder()
-                    .day(day)
-                    .numberPair(numberPair)
-                    .subject(subject)
-                    .data(mergedTeachers)
-                    .classroom(classroom)
-                    .build();
-
-            set.add(mergedDto);
-        });
-
-        return set;
+        return new HashSet<>(mergedScheduleMap.values());
     }
 
     private ScheduleResponse convert(Sample sample) {
