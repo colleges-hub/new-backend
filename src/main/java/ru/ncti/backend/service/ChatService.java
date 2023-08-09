@@ -271,7 +271,7 @@ public class ChatService {
 
     private List<MessageResponse> generatedMessage(List<Message> messages) {
         String URL = String.format("http://%s:9000/%s/", host, bucket);
-        log.info(URL);
+
         return messages.stream().map(message -> {
             String photo = message.getSender().getPhoto() == null ? null : URL + message.getSender().getPhoto();
             if (message.getType().equals("image")) {

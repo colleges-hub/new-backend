@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import ru.ncti.backend.api.request.AuthRequest;
 import ru.ncti.backend.api.request.GroupRequest;
+import ru.ncti.backend.api.request.ScheduleRequest;
 import ru.ncti.backend.api.request.SectionRequest;
 import ru.ncti.backend.api.request.SpecialityRequest;
 import ru.ncti.backend.api.request.SubjectRequest;
@@ -47,7 +48,6 @@ public class AdminController {
     public ResponseEntity<UserResponse> getProfile() {
         return ResponseEntity.status(HttpStatus.OK).body(adminService.getProfile());
     }
-
 
     @GetMapping("/users")
     public ResponseEntity<List<UserResponse>> getUsersByType(@RequestParam("type") String type) {
@@ -88,6 +88,21 @@ public class AdminController {
         return ResponseEntity.status(HttpStatus.OK).body(adminService.getGroupById(id));
     }
 
+    @PostMapping("/subject")
+    public ResponseEntity<String> createSubject(@RequestBody SubjectRequest request) {
+        return ResponseEntity.status(HttpStatus.OK).body(adminService.createSubject(request));
+    }
+
+
+    @PostMapping("/upload-subjects")
+    public ResponseEntity<String> uploadSubjects(@RequestParam("file") MultipartFile file) {
+        try {
+            return ResponseEntity.status(HttpStatus.OK).body(adminService.uploadSubjects(file));
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
+    }
+
     @GetMapping("/subjects")
     public ResponseEntity<List<Subject>> getSubjects() {
         return ResponseEntity.status(HttpStatus.OK).body(adminService.getSubjects());
@@ -96,6 +111,20 @@ public class AdminController {
     @GetMapping("/subjects/{id}")
     public ResponseEntity<Subject> getSubjectById(@PathVariable("id") Long id) {
         return ResponseEntity.status(HttpStatus.OK).body(adminService.getSubjectById(id));
+    }
+
+    @PostMapping("/speciality")
+    public ResponseEntity<String> createSpeciality(@RequestBody SpecialityRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(adminService.createSpeciality(request));
+    }
+
+    @PostMapping("/upload-specialities")
+    public ResponseEntity<?> uploadSpeciality(@RequestParam("file") MultipartFile file) {
+        try {
+            return ResponseEntity.status(HttpStatus.CREATED).body(adminService.uploadSpeciality(file));
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
     }
 
     @GetMapping("/specialities")
@@ -122,14 +151,14 @@ public class AdminController {
         }
     }
 
-    @PostMapping("/subject")
-    public ResponseEntity<String> createSubject(@RequestBody SubjectRequest request) {
-        return ResponseEntity.status(HttpStatus.OK).body(adminService.createSubject(request));
+    @PostMapping("/create-template")
+    public ResponseEntity<String> createTemplate(@RequestBody TemplateRequest request) {
+        return ResponseEntity.status(HttpStatus.OK).body(adminService.createTemplate(request));
     }
 
-    @PostMapping("/speciality")
-    public ResponseEntity<String> createSpeciality(@RequestBody SpecialityRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(adminService.createSpeciality(request));
+    @PostMapping("/change-schedule")
+    public ResponseEntity<?> changeSchedule(@RequestBody ScheduleRequest dto) {
+        return ResponseEntity.status(HttpStatus.OK).body(adminService.changeSchedule(dto));
     }
 
 
@@ -139,11 +168,6 @@ public class AdminController {
         return ResponseEntity.status(HttpStatus.OK).body(adminService.updateProfile(dto));
     }
 
-    @PostMapping("/create-template")
-    public ResponseEntity<String> createTemplate(@RequestBody TemplateRequest request) {
-        return ResponseEntity.status(HttpStatus.OK).body(adminService.createTemplate(request));
-    }
-
     @PostMapping("/upload-schedule")
     public ResponseEntity<String> uploadTemplate(@RequestParam("file") MultipartFile file) {
         try {
@@ -151,11 +175,6 @@ public class AdminController {
         } catch (IOException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
-    }
-
-    @PostMapping("/change-schedule")
-    public ResponseEntity<?> changeSchedule(@RequestBody ScheduleResponse dto) {
-        return ResponseEntity.status(HttpStatus.OK).body(adminService.changeSchedule(dto));
     }
 
     @GetMapping("/students")

@@ -55,14 +55,10 @@ public class Schedule {
     @Column(name = "subject_number")
     private Integer numberPair;
 
-    @Column(name = "subgroup")
-    private Integer subgroup;
-
     @ManyToOne
     @JoinColumn(name = "teacher_id")
     private User teacher;
 
     @Column(name = "classroom")
     private String classroom;
-
 }

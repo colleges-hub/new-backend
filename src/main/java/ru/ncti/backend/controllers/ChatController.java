@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import ru.ncti.backend.api.request.ChatRequest;
+import ru.ncti.backend.api.request.MessageFileRequest;
 import ru.ncti.backend.api.request.MessageRequest;
 import ru.ncti.backend.api.request.UsersRequest;
 import ru.ncti.backend.api.response.MessageResponse;
@@ -23,6 +24,7 @@ import ru.ncti.backend.api.response.ViewChatResponse;
 import ru.ncti.backend.service.ChatService;
 
 import java.security.Principal;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
@@ -68,6 +70,11 @@ public class ChatController {
     public void handlePublicMessage(@DestinationVariable("chatId") UUID id, MessageRequest message, Principal principal) {
         MessageResponse mes = chatService.sendToPublic(id, message, principal);
         simpMessagingTemplate.convertAndSend("/topic/public/" + id, mes);
+    }
+
+    @MessageMapping("/{chatId}/file")
+    public void handlePublicMessage(@DestinationVariable("chatId") UUID chatId, MessageFileRequest fileRequest) {
+        log.info(Arrays.toString(fileRequest.getFile()));
     }
 
     @MessageMapping("/{chatId}/{user}")

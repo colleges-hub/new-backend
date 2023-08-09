@@ -201,7 +201,7 @@ public class UserService {
             map.computeIfAbsent(s.getDay(), k -> new HashSet<>()).add(s);
         }
         List<Schedule> sch = scheduleRepository.findLatestScheduleForGroup(group.getId());
-
+        log.info(sch.toString());
         if (!sch.isEmpty()) {
             for (Schedule schedule : sch) {
                 String dayInWeek = LocalDate
@@ -210,21 +210,21 @@ public class UserService {
                         .getDisplayName(TextStyle.FULL, new Locale("ru"));
                 String capitalizedDay = dayInWeek.substring(0, 1).toUpperCase() + dayInWeek.substring(1);
 
-                Set<ScheduleResponse> set = map.get(capitalizedDay);
-                if (set != null) {
-                    ScheduleResponse scheduleResponse = ScheduleResponse.builder()
-                            .day(capitalizedDay)
-                            .numberPair(schedule.getNumberPair())
-                            .subject(schedule.getSubject().getName())
-                            .data(List.of(format("%s %s %s",
-                                    schedule.getTeacher().getLastname(),
-                                    schedule.getTeacher().getFirstname(),
-                                    schedule.getTeacher().getSurname())))
-                            .classroom(schedule.getClassroom())
-                            .build();
-                    set.removeIf(s -> Objects.equals(s.getNumberPair(), scheduleResponse.getNumberPair()));
-                    set.add(scheduleResponse);
-                }
+                Set<ScheduleResponse> set = map.computeIfAbsent(capitalizedDay, k -> new HashSet<>());
+
+                ScheduleResponse scheduleResponse = ScheduleResponse.builder()
+                        .day(capitalizedDay)
+                        .numberPair(schedule.getNumberPair())
+                        .subject(schedule.getSubject().getName())
+                        .data(List.of(format("%s %s %s",
+                                schedule.getTeacher().getLastname(),
+                                schedule.getTeacher().getFirstname(),
+                                schedule.getTeacher().getSurname())))
+                        .classroom(schedule.getClassroom())
+                        .build();
+                set.removeIf(s -> Objects.equals(s.getNumberPair(), scheduleResponse.getNumberPair()));
+                set.add(scheduleResponse);
+
             }
         }
 

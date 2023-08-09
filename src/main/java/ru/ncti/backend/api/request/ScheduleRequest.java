@@ -4,17 +4,18 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
+import java.sql.Date;
+
 /**
  * user: ichuvilin
  */
 @Getter
 @Setter
 @ToString
-public class TemplateRequest {
-    private String day;
+public class ScheduleRequest {
+    private Date date;
     private Long group;
     private Long subject;
-    private String parity;
     private Integer numberPair;
     private Long teacher;
     private String classroom;

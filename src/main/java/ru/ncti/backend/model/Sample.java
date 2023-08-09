@@ -50,9 +50,6 @@ public class Sample {
     @Column(name = "subject_number")
     private Integer numberPair;
 
-    @Column(name = "subgroup")
-    private Integer subgroup;
-
     @ManyToOne
     @JoinColumn(name = "teacher_id")
     private User teacher;

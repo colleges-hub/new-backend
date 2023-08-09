@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import ru.ncti.backend.api.request.AuthRequest;
 import ru.ncti.backend.api.request.GroupRequest;
+import ru.ncti.backend.api.request.ScheduleRequest;
 import ru.ncti.backend.api.request.SectionRequest;
 import ru.ncti.backend.api.request.SpecialityRequest;
 import ru.ncti.backend.api.request.SubjectRequest;
@@ -25,13 +26,13 @@ import ru.ncti.backend.api.request.UserRequest;
 import ru.ncti.backend.api.response.EmailResponse;
 import ru.ncti.backend.api.response.GroupResponse;
 import ru.ncti.backend.api.response.RoleResponse;
-import ru.ncti.backend.api.response.ScheduleResponse;
 import ru.ncti.backend.api.response.SectionResponse;
 import ru.ncti.backend.api.response.SpecialityResponse;
 import ru.ncti.backend.api.response.UserResponse;
 import ru.ncti.backend.model.Group;
 import ru.ncti.backend.model.Role;
 import ru.ncti.backend.model.Sample;
+import ru.ncti.backend.model.Schedule;
 import ru.ncti.backend.model.Section;
 import ru.ncti.backend.model.Speciality;
 import ru.ncti.backend.model.Subject;
@@ -39,17 +40,16 @@ import ru.ncti.backend.model.User;
 import ru.ncti.backend.repository.GroupRepository;
 import ru.ncti.backend.repository.RoleRepository;
 import ru.ncti.backend.repository.SampleRepository;
+import ru.ncti.backend.repository.ScheduleRepository;
 import ru.ncti.backend.repository.SectionRepository;
 import ru.ncti.backend.repository.SpecialityRepository;
 import ru.ncti.backend.repository.SubjectRepository;
 import ru.ncti.backend.repository.UserRepository;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.temporal.WeekFields;
 import java.util.HashMap;
@@ -81,6 +81,7 @@ public class AdminService {
     private final SubjectRepository subjectRepository;
     private final SampleRepository sampleRepository;
     private final SectionRepository sectionRepository;
+    private final ScheduleRepository scheduleRepository;
     private final RabbitTemplate rabbitTemplate;
 
 
@@ -182,16 +183,8 @@ public class AdminService {
         return "Data updated";
     }
 
-    public String createSpeciality(SpecialityRequest dto) {
-        if (specialityRepository.findById(dto.getId()).isPresent()) {
-            log.error(String.format("Speciality %s already exist", dto.getName()));
-            throw new IllegalArgumentException(String.format("Speciality %s already exist", dto.getName()));
-        }
-        specialityRepository.save(convert(dto, Speciality.class));
-        return "Speciality was added";
-    }
-
     public String createTemplate(TemplateRequest request) {
+        log.info(request.toString());
         Group g = groupRepository.findById(request.getGroup())
                 .orElseThrow(() -> {
                     log.error(String.format("Group %d already exist", request.getGroup()));
@@ -228,6 +221,21 @@ public class AdminService {
         }
         subjectRepository.save(convert(request, Subject.class));
         return "Subject was added";
+    }
+
+
+    public String uploadSubjects(MultipartFile file) throws IOException {
+        try (InputStream inputStream = file.getInputStream()) {
+            CSVReader csvReader = new CSVReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
+            List<SubjectRequest> subjects = new CsvToBeanBuilder<SubjectRequest>(csvReader)
+                    .withType(SubjectRequest.class).build().parse();
+
+            List<CompletableFuture<Void>> futures = subjects.stream().map(
+                    subject -> CompletableFuture.runAsync(() -> createSubject(subject))
+            ).toList();
+        }
+
+        return "Subjects upload";
     }
 
     @Transactional(readOnly = false)
@@ -381,6 +389,33 @@ public class AdminService {
         return "User successfully deleted";
     }
 
+    public String createSpeciality(SpecialityRequest dto) {
+        if (specialityRepository.findById(dto.getId()).isPresent()) {
+            log.error(String.format("Speciality %s already exist", dto.getName()));
+            throw new IllegalArgumentException(String.format("Speciality %s already exist", dto.getName()));
+        }
+        specialityRepository.save(convert(dto, Speciality.class));
+        return "Speciality was added";
+    }
+
+    public String uploadSpeciality(MultipartFile file) throws IOException {
+        try (InputStream inputStream = file.getInputStream()) {
+            CSVReader csvReader = new CSVReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
+            List<SpecialityRequest> specialities = new CsvToBeanBuilder<SpecialityRequest>(csvReader)
+                    .withType(SpecialityRequest.class).build().parse();
+
+            List<CompletableFuture<Void>> futures = specialities
+                    .stream()
+                    .map(s -> CompletableFuture.runAsync(() -> createSpeciality(s))).toList();
+
+            CompletableFuture<Void> allFutures = CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
+            allFutures.join();
+            csvReader.close();
+        }
+
+        return "Upload specialities";
+    }
+
     public List<SpecialityResponse> getSpecialities() {
         return specialityRepository.findAll().stream().map(
                 speciality -> SpecialityResponse.builder()
@@ -391,8 +426,37 @@ public class AdminService {
     }
 
     //todo
-    public String changeSchedule(ScheduleResponse dto) {
-        return null;
+    public String changeSchedule(ScheduleRequest request) {
+        log.info(request.toString());
+
+        Group group = groupRepository.findById(request.getGroup()).orElseThrow(() -> {
+            log.error(String.format("Group with id %d not found", request.getGroup()));
+            return new IllegalArgumentException(String.format("Group with id %d not found", request.getGroup()));
+        });
+
+        Subject subject = subjectRepository.findById(request.getSubject()).orElseThrow(() -> {
+            log.error(String.format("Subject with id %d not found", request.getSubject()));
+            return new IllegalArgumentException(String.format("Subject with id %d not found", request.getSubject()));
+        });
+
+        User teacher = userRepository.findById(request.getTeacher()).orElseThrow(() -> {
+            log.error(String.format("Teacher with id %d not found", request.getSubject()));
+            return new IllegalArgumentException(String.format("Teacher with id %d not found", request.getSubject()));
+        });
+
+
+        Schedule schedule = Schedule.builder()
+                .date(request.getDate())
+                .group(group)
+                .subject(subject)
+                .numberPair(request.getNumberPair())
+                .teacher(teacher)
+                .classroom(request.getClassroom())
+                .build();
+
+        scheduleRepository.save(schedule);
+
+        return "Changes was added";
     }
 
     public String deleteGroupById(Long id) {
