@@ -11,6 +11,9 @@ import ru.ncti.backend.model.User;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * user: ichuvilin
+ */
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByEmail(String email);

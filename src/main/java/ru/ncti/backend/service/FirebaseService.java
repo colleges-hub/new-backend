@@ -4,7 +4,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.FirebaseMessagingException;
-import com.google.firebase.messaging.Message;
 import com.google.firebase.messaging.MulticastMessage;
 import com.google.firebase.messaging.Notification;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +13,7 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.ncti.backend.api.response.ViewChatResponse;
+import ru.ncti.backend.model.FCM;
 import ru.ncti.backend.model.Group;
 import ru.ncti.backend.model.PrivateChat;
 import ru.ncti.backend.model.PublicChat;
@@ -80,8 +80,9 @@ public class FirebaseService {
             Set<String> fcmTokens = new HashSet<>();
 
             for (User userOff : userOffline) {
-                if (userOff.getDeviceId() != null)
-                    fcmTokens.add(userOff.getDeviceId());
+                if (userOff.getDevice() != null) {
+                    user.getDevice().forEach(device -> fcmTokens.add(device.getToken()));
+                }
             }
 
             if (!fcmTokens.isEmpty()) {
@@ -118,11 +119,11 @@ public class FirebaseService {
         String chatWithUser = redisService.getValue(String.format("user:%s", user2.getUsername()));
 
         if (chatWithUser == null || !chatWithUser.equals(map.get("chat"))) {
-            String fcmToken = user2.getDeviceId();
+            Set<String> fcmToken = user2.getDevice().stream().map(FCM::getToken).collect(Collectors.toSet());
             String name = String.format("%s %s", user.getFirstname(), user.getLastname());
 
-            Message message = Message.builder()
-                    .setToken(fcmToken)
+            MulticastMessage message = MulticastMessage.builder()
+                    .addAllTokens(fcmToken)
                     .setNotification(Notification.builder()
                             .setTitle(name)
                             .setBody(String.format("%s", map.get("text")))
@@ -134,7 +135,7 @@ public class FirebaseService {
                             .id(chat.getId())
                             .build()))
                     .build();
-            firebaseMessaging.send(message);
+            firebaseMessaging.sendMulticast(message);
         }
     }
 
@@ -149,10 +150,7 @@ public class FirebaseService {
         Set<String> tokens = new HashSet<>();
 
         students.forEach(student -> {
-            Set<String> value = redisService.getValueSet(String.format("device:%s", student.getUsername()));
-            if (value != null) {
-                tokens.addAll(value);
-            }
+            student.getDevice().forEach(device -> tokens.add(device.getDevice()));
         });
 
 

@@ -20,6 +20,7 @@ import ru.ncti.backend.api.request.ScheduleChangeRequest;
 import ru.ncti.backend.api.response.GroupResponse;
 import ru.ncti.backend.api.response.ScheduleResponse;
 import ru.ncti.backend.api.response.UserResponse;
+import ru.ncti.backend.model.FCM;
 import ru.ncti.backend.model.Group;
 import ru.ncti.backend.model.PrivateChat;
 import ru.ncti.backend.model.Role;
@@ -201,7 +202,7 @@ public class UserService {
             map.computeIfAbsent(s.getDay(), k -> new HashSet<>()).add(s);
         }
         List<Schedule> sch = scheduleRepository.findLatestScheduleForGroup(group.getId());
-        log.info(sch.toString());
+
         if (!sch.isEmpty()) {
             for (Schedule schedule : sch) {
                 String dayInWeek = LocalDate
@@ -292,7 +293,12 @@ public class UserService {
         var auth = SecurityContextHolder.getContext().getAuthentication();
         User user = (User) auth.getPrincipal();
 
-        user.setDeviceId(dto.getToken());
+        FCM fcm = new FCM();
+        fcm.setToken(dto.getToken());
+        fcm.setDevice(dto.getDevice());
+
+        user.getDevice().add(fcm);
+
         userRepository.save(user);
 
         return "Token was added";

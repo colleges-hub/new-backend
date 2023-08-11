@@ -23,7 +23,6 @@ import ru.ncti.backend.api.request.SubjectRequest;
 import ru.ncti.backend.api.request.TemplateRequest;
 import ru.ncti.backend.api.request.UserRequest;
 import ru.ncti.backend.api.response.GroupResponse;
-import ru.ncti.backend.api.response.ScheduleResponse;
 import ru.ncti.backend.api.response.SectionResponse;
 import ru.ncti.backend.api.response.SpecialityResponse;
 import ru.ncti.backend.api.response.UserResponse;
@@ -161,6 +160,11 @@ public class AdminController {
         return ResponseEntity.status(HttpStatus.OK).body(adminService.changeSchedule(dto));
     }
 
+    @GetMapping("/students")
+    public ResponseEntity<List<UserResponse>> getStudents(@RequestParam("group") Long group) {
+        return ResponseEntity.status(HttpStatus.OK).body(adminService.getStudentsByGroup(group));
+    }
+
 
     // todo: all rework
     @PatchMapping("/update")
@@ -175,11 +179,6 @@ public class AdminController {
         } catch (IOException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
-    }
-
-    @GetMapping("/students")
-    public ResponseEntity<List<UserResponse>> getStudents(@RequestParam("group") Long group) {
-        return ResponseEntity.status(HttpStatus.OK).body(adminService.getStudentsByGroup(group));
     }
 
     @DeleteMapping("/users/{id}")

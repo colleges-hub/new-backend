@@ -6,6 +6,9 @@ import ru.ncti.backend.model.Role;
 
 import java.util.Optional;
 
+/**
+ * user: ichuvilin
+ */
 @Repository
 public interface RoleRepository extends JpaRepository<Role, Long> {
     Optional<Role> findByName(String name);

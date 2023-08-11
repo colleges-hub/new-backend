@@ -9,9 +9,7 @@ import ru.ncti.backend.model.User;
 import java.util.List;
 
 /**
- * Created by IntelliJ IDEA.
- * User: Ivan Chuvilin (@ichuvilin)
- * Date: 26-05-2023
+ * user: ichuvilin
  */
 @Repository
 public interface SampleRepository extends JpaRepository<Sample, Long> {

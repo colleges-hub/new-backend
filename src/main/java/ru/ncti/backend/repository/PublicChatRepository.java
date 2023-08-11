@@ -10,6 +10,9 @@ import ru.ncti.backend.model.User;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * user: ichuvilin
+ */
 @Repository
 public interface PublicChatRepository extends JpaRepository<PublicChat, UUID> {
 

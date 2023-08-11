@@ -64,7 +64,7 @@ public class AuthService {
         var auth = SecurityContextHolder.getContext().getAuthentication();
         User currentUser = (User) auth.getPrincipal();
 
-        currentUser.setDeviceId(null);
+        currentUser.setDevice(null);
         userRepository.save(currentUser);
     }
 }

@@ -7,6 +7,9 @@ import ru.ncti.backend.model.Subject;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * user: ichuvilin
+ */
 @Repository
 public interface SubjectRepository extends JpaRepository<Subject, Long> {
 
