@@ -23,17 +23,21 @@ import ru.ncti.backend.repository.PrivateChatRepository;
 import ru.ncti.backend.repository.PublicChatRepository;
 import ru.ncti.backend.repository.UserRepository;
 
+import java.sql.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
+import static ru.ncti.backend.config.RabbitConfig.CHANGE_SCHEDULE;
 import static ru.ncti.backend.config.RabbitConfig.PRIVATE_CHAT_NOTIFICATION;
 import static ru.ncti.backend.config.RabbitConfig.PUBLIC_CHAT_NOTIFICATION;
-import static ru.ncti.backend.config.RabbitConfig.UPDATE_SCHEDULE;
+import static ru.ncti.backend.config.RabbitConfig.UPDATE_CLASSROOM;
 
 
 /**
@@ -140,8 +144,8 @@ public class FirebaseService {
     }
 
     @Async
-    @RabbitListener(queues = UPDATE_SCHEDULE)
-    public void sendNotificationAboutChanges(Map<String, ?> map) throws FirebaseMessagingException {
+    @RabbitListener(queues = UPDATE_CLASSROOM)
+    public void sendNotificationAboutChangeClassroom(Map<String, ?> map) throws FirebaseMessagingException {
         Group group = groupRepository.findByName(map.get("group").toString())
                 .orElseThrow(() -> new IllegalArgumentException("Group not found"));
 
@@ -149,19 +153,60 @@ public class FirebaseService {
 
         Set<String> tokens = new HashSet<>();
 
-        students.forEach(student -> {
-            student.getDevice().forEach(device -> tokens.add(device.getDevice()));
-        });
-
+        students.forEach(student -> student.getDevice().forEach(device -> {
+            try {
+                if (isToken(device.getToken()).get())
+                    tokens.add(device.getDevice());
+            } catch (InterruptedException | ExecutionException e) {
+                throw new RuntimeException(e);
+            }
+        }));
 
         MulticastMessage multicastMessage = MulticastMessage.builder()
                 .addAllTokens(tokens)
                 .setNotification(Notification.builder()
-                        .setTitle(String.format("Преподаватель изменил кабинет на %s", map.get("date").toString().split(" ")[0]))
+                        .setTitle(String.format("Преподаватель изменил кабинет на %s", map.get("date").toString()
+                                .split(" ")[0]))
                         .setBody(String.format("№ пары %d : %s", map.get("pair"), map.get("classroom")))
                         .build())
                 .build();
         firebaseMessaging.sendMulticast(multicastMessage);
+    }
+
+    @Async
+    @RabbitListener(queues = CHANGE_SCHEDULE)
+    public void notificationChangeSchedule(Map<String, ?> map) throws FirebaseMessagingException {
+        Group group = groupRepository.findByName(map.get("group").toString())
+                .orElseThrow(() -> new IllegalArgumentException("Group not found"));
+
+        List<User> students = userRepository.findAllByGroupOrderByLastname(group);
+
+        Set<String> tokens = new HashSet<>();
+
+        students.forEach(student -> student.getDevice().forEach(device -> {
+            try {
+                if (isToken(device.getToken()).get())
+                    tokens.add(device.getDevice());
+            } catch (InterruptedException | ExecutionException e) {
+                throw new RuntimeException(e);
+            }
+        }));
+
+        Date date = (Date) map.get("day");
+
+        MulticastMessage multicastMessage = MulticastMessage.builder()
+                .addAllTokens(tokens)
+                .setNotification(Notification.builder()
+                        .setTitle("Изменения в расписание")
+                        .setBody(String.format("Расписание на %s было изменено", date))
+                        .build())
+                .build();
+        firebaseMessaging.sendMulticast(multicastMessage);
+    }
+
+    @Async
+    CompletableFuture<Boolean> isToken(String token) {
+        return CompletableFuture.completedFuture(token != null);
     }
 
 }

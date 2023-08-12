@@ -15,7 +15,9 @@ public class RabbitConfig {
     public static final String EMAIL_UPDATE = "email_update";
     public static final String PUBLIC_CHAT_NOTIFICATION = "public_chat_notification";
     public static final String PRIVATE_CHAT_NOTIFICATION = "private_chat_notification";
-    public static final String UPDATE_SCHEDULE = "update_schedule";
+    public static final String UPDATE_CLASSROOM = "update_classroom";
+    public static final String CHANGE_SCHEDULE = "change_schedule";
+
 
     @Bean
     public MessageConverter jsonMessage() {
@@ -23,7 +25,7 @@ public class RabbitConfig {
     }
 
     @Bean
-    public Queue emailQueue() {
+    public Queue emailNotificationQueue() {
         return new Queue(EMAIL_UPDATE);
     }
 
@@ -38,7 +40,12 @@ public class RabbitConfig {
     }
 
     @Bean
+    public Queue classroomNotificationQueue() {
+        return new Queue(UPDATE_CLASSROOM);
+    }
+
+    @Bean
     public Queue scheduleNotificationQueue() {
-        return new Queue(UPDATE_SCHEDULE);
+        return new Queue(CHANGE_SCHEDULE);
     }
 }

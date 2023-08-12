@@ -165,13 +165,6 @@ public class AdminController {
         return ResponseEntity.status(HttpStatus.OK).body(adminService.getStudentsByGroup(group));
     }
 
-
-    // todo: all rework
-    @PatchMapping("/update")
-    public ResponseEntity<String> updateProfile(@RequestBody AuthRequest dto) {
-        return ResponseEntity.status(HttpStatus.OK).body(adminService.updateProfile(dto));
-    }
-
     @PostMapping("/upload-schedule")
     public ResponseEntity<String> uploadTemplate(@RequestParam("file") MultipartFile file) {
         try {
@@ -179,6 +172,22 @@ public class AdminController {
         } catch (IOException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
+    }
+
+    @PostMapping("/upload-changes")
+    public ResponseEntity<String> uploadChanges(@RequestParam("file") MultipartFile file) {
+        try {
+            return ResponseEntity.status(HttpStatus.OK).body(adminService.uploadChanges(file));
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
+    }
+
+
+    // todo: all rework
+    @PatchMapping("/update")
+    public ResponseEntity<String> updateProfile(@RequestBody AuthRequest dto) {
+        return ResponseEntity.status(HttpStatus.OK).body(adminService.updateProfile(dto));
     }
 
     @DeleteMapping("/users/{id}")

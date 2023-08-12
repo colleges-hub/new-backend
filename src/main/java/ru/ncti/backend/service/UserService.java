@@ -59,7 +59,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static java.lang.String.format;
-import static ru.ncti.backend.config.RabbitConfig.UPDATE_SCHEDULE;
+import static ru.ncti.backend.config.RabbitConfig.UPDATE_CLASSROOM;
 
 /**
  * user: ichuvilin
@@ -166,7 +166,7 @@ public class UserService {
                     .subject(subject)
                     .classroom(request.getClassroom())
                     .build();
-            rabbitTemplate.convertAndSend(UPDATE_SCHEDULE,
+            rabbitTemplate.convertAndSend(UPDATE_CLASSROOM,
                     new HashMap<>() {{
                         put("date", request.getDate());
                         put("group", schedule.getGroup().getName());

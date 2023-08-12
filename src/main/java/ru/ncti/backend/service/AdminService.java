@@ -20,6 +20,7 @@ import ru.ncti.backend.api.request.SectionRequest;
 import ru.ncti.backend.api.request.SpecialityRequest;
 import ru.ncti.backend.api.request.SubjectRequest;
 import ru.ncti.backend.api.request.TemplateRequest;
+import ru.ncti.backend.api.request.UploadScheduleRequest;
 import ru.ncti.backend.api.request.UploadTemplateRequest;
 import ru.ncti.backend.api.request.UploadUserRequest;
 import ru.ncti.backend.api.request.UserRequest;
@@ -50,17 +51,22 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.temporal.WeekFields;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
+import static ru.ncti.backend.config.RabbitConfig.CHANGE_SCHEDULE;
 import static ru.ncti.backend.config.RabbitConfig.EMAIL_UPDATE;
 
 
@@ -425,10 +431,7 @@ public class AdminService {
         ).toList();
     }
 
-    //todo
     public String changeSchedule(ScheduleRequest request) {
-        log.info(request.toString());
-
         Group group = groupRepository.findById(request.getGroup()).orElseThrow(() -> {
             log.error(String.format("Group with id %d not found", request.getGroup()));
             return new IllegalArgumentException(String.format("Group with id %d not found", request.getGroup()));
@@ -443,6 +446,8 @@ public class AdminService {
             log.error(String.format("Teacher with id %d not found", request.getSubject()));
             return new IllegalArgumentException(String.format("Teacher with id %d not found", request.getSubject()));
         });
+
+        rabbitTemplate.convertAndSend(CHANGE_SCHEDULE, Map.of("group", group.getId(), "day", request.getDate()));
 
 
         Schedule schedule = Schedule.builder()
@@ -459,6 +464,67 @@ public class AdminService {
         return "Changes was added";
     }
 
+
+    public String uploadChanges(MultipartFile file) throws IOException {
+        SimpleDateFormat format = new SimpleDateFormat("dd.MM.yyyy");
+        try (InputStream inputStream = file.getInputStream()) {
+            CSVReader csvReader = new CSVReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
+            List<UploadScheduleRequest> schedules = new CsvToBeanBuilder<UploadScheduleRequest>(csvReader)
+                    .withType(UploadScheduleRequest.class).build().parse();
+
+            List<CompletableFuture<Void>> futures = schedules.stream()
+                    .map(s -> CompletableFuture.runAsync(() -> {
+                        Date parsedDate = null;
+                        try {
+                            parsedDate = format.parse(s.getDate());
+                            java.sql.Date sqlDate = new java.sql.Date(parsedDate.getTime());
+
+                            Group group = groupRepository.findByName(s.getGroup())
+                                    .orElseThrow(() -> {
+                                        log.error(String.format("Group %s  not found", s.getGroup()));
+                                        return new IllegalArgumentException(String.format("Group %s  not found", s.getGroup()));
+                                    });
+
+                            Subject subject = subjectRepository.findByName(s.getSubject())
+                                    .orElseThrow(() -> {
+                                        log.error(String.format("Subject %s  not found", s.getSubject()));
+                                        return new IllegalArgumentException(String.format("Subject %s  not found", s.getSubject()));
+                                    });
+                            String[] teacherName = s.getTeacher().split(" ");
+
+                            User teacher = userRepository.findByLastnameAndFirstname(teacherName[0], teacherName[1])
+                                    .orElseThrow(() -> {
+                                        log.error(String.format("Teacher %s not found", s.getTeacher()));
+                                        return new IllegalArgumentException(String.format("Teacher %s not found", s.getTeacher()));
+                                    });
+
+                            rabbitTemplate.convertAndSend(CHANGE_SCHEDULE, Map.of("group", group.getId(), "day", sqlDate));
+
+                            Schedule schedule = Schedule.builder()
+                                    .date(sqlDate)
+                                    .group(group)
+                                    .subject(subject)
+                                    .numberPair(s.getNumberPair())
+                                    .teacher(teacher)
+                                    .classroom(s.getClassroom())
+                                    .build();
+
+                            scheduleRepository.save(schedule);
+                        } catch (ParseException e) {
+                            throw new RuntimeException(e);
+                        }
+
+                    })).toList();
+
+            CompletableFuture<Void> allFutures = CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
+            allFutures.join();
+            csvReader.close();
+        }
+
+        return "Uploaded changes";
+    }
+
+    //todo
     public String deleteGroupById(Long id) {
         Group group = groupRepository.findById(id).orElseThrow(() -> {
             log.error(String.format("Group with id %d not found", id));

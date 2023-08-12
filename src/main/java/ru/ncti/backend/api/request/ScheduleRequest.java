@@ -1,8 +1,8 @@
 package ru.ncti.backend.api.request;
 
+import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
-import lombok.ToString;
 
 import java.sql.Date;
 
@@ -11,7 +11,7 @@ import java.sql.Date;
  */
 @Getter
 @Setter
-@ToString
+@Builder
 public class ScheduleRequest {
     private Date date;
     private Long group;
