@@ -23,7 +23,6 @@ import ru.ncti.backend.repository.PrivateChatRepository;
 import ru.ncti.backend.repository.PublicChatRepository;
 import ru.ncti.backend.repository.UserRepository;
 
-import java.sql.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -175,8 +174,8 @@ public class FirebaseService {
 
     @Async
     @RabbitListener(queues = CHANGE_SCHEDULE)
-    public void notificationChangeSchedule(Map<String, ?> map) throws FirebaseMessagingException {
-        Group group = groupRepository.findByName(map.get("group").toString())
+    public void notificationChangeSchedule(Map<String, String> map) throws FirebaseMessagingException {
+        Group group = groupRepository.findById(Long.valueOf(map.get("group")))
                 .orElseThrow(() -> new IllegalArgumentException("Group not found"));
 
         List<User> students = userRepository.findAllByGroupOrderByLastname(group);
@@ -186,19 +185,18 @@ public class FirebaseService {
         students.forEach(student -> student.getDevice().forEach(device -> {
             try {
                 if (isToken(device.getToken()).get())
-                    tokens.add(device.getDevice());
+                    tokens.add(device.getToken());
             } catch (InterruptedException | ExecutionException e) {
                 throw new RuntimeException(e);
             }
         }));
-
-        Date date = (Date) map.get("day");
+        log.info(tokens.toString());
 
         MulticastMessage multicastMessage = MulticastMessage.builder()
                 .addAllTokens(tokens)
                 .setNotification(Notification.builder()
-                        .setTitle("Изменения в расписание")
-                        .setBody(String.format("Расписание на %s было изменено", date))
+                        .setTitle("Изменения в расписании")
+                        .setBody(String.format("Расписание на %s было изменено", map.get("day")))
                         .build())
                 .build();
         firebaseMessaging.sendMulticast(multicastMessage);

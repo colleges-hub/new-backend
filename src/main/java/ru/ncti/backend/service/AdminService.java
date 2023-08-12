@@ -432,6 +432,7 @@ public class AdminService {
     }
 
     public String changeSchedule(ScheduleRequest request) {
+        log.info(request.getClassroom());
         Group group = groupRepository.findById(request.getGroup()).orElseThrow(() -> {
             log.error(String.format("Group with id %d not found", request.getGroup()));
             return new IllegalArgumentException(String.format("Group with id %d not found", request.getGroup()));
@@ -447,7 +448,7 @@ public class AdminService {
             return new IllegalArgumentException(String.format("Teacher with id %d not found", request.getSubject()));
         });
 
-        rabbitTemplate.convertAndSend(CHANGE_SCHEDULE, Map.of("group", group.getId(), "day", request.getDate()));
+        rabbitTemplate.convertAndSend(CHANGE_SCHEDULE, Map.of("group", group.getId(), "day", request.getDate().toString()));
 
 
         Schedule schedule = Schedule.builder()

@@ -11,7 +11,6 @@ import java.sql.Date;
  */
 @Getter
 @Setter
-@Builder
 public class ScheduleRequest {
     private Date date;
     private Long group;
