@@ -33,6 +33,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
+import static ru.ncti.backend.config.RabbitConfig.CERTIFICATE_NOTIFICATION;
 import static ru.ncti.backend.config.RabbitConfig.CHANGE_SCHEDULE;
 import static ru.ncti.backend.config.RabbitConfig.PRIVATE_CHAT_NOTIFICATION;
 import static ru.ncti.backend.config.RabbitConfig.PUBLIC_CHAT_NOTIFICATION;
@@ -84,7 +85,7 @@ public class FirebaseService {
 
             for (User userOff : userOffline) {
                 if (userOff.getDevice() != null) {
-                    user.getDevice().forEach(device -> fcmTokens.add(device.getToken()));
+                    userOff.getDevice().forEach(device -> fcmTokens.add(device.getToken()));
                 }
             }
 
@@ -124,21 +125,22 @@ public class FirebaseService {
         if (chatWithUser == null || !chatWithUser.equals(map.get("chat"))) {
             Set<String> fcmToken = user2.getDevice().stream().map(FCM::getToken).collect(Collectors.toSet());
             String name = String.format("%s %s", user.getFirstname(), user.getLastname());
-
-            MulticastMessage message = MulticastMessage.builder()
-                    .addAllTokens(fcmToken)
-                    .setNotification(Notification.builder()
-                            .setTitle(name)
-                            .setBody(String.format("%s", map.get("text")))
-                            .build())
-                    .putData("page", "ChatRoute")
-                    .putData("chat", objectMapper.writeValueAsString(ViewChatResponse.builder()
-                            .type("PRIVATE")
-                            .name(name)
-                            .id(chat.getId())
-                            .build()))
-                    .build();
-            firebaseMessaging.sendMulticast(message);
+            if (fcmToken.size() > 0) {
+                MulticastMessage message = MulticastMessage.builder()
+                        .addAllTokens(fcmToken)
+                        .setNotification(Notification.builder()
+                                .setTitle(name)
+                                .setBody(String.format("%s", map.get("text")))
+                                .build())
+                        .putData("page", "ChatRoute")
+                        .putData("chat", objectMapper.writeValueAsString(ViewChatResponse.builder()
+                                .type("PRIVATE")
+                                .name(name)
+                                .id(chat.getId())
+                                .build()))
+                        .build();
+                firebaseMessaging.sendMulticast(message);
+            }
         }
     }
 
@@ -154,22 +156,25 @@ public class FirebaseService {
 
         students.forEach(student -> student.getDevice().forEach(device -> {
             try {
-                if (isToken(device.getToken()).get())
-                    tokens.add(device.getDevice());
+                if (isToken(device.getToken()).get()) {
+                    tokens.add(device.getToken());
+                }
             } catch (InterruptedException | ExecutionException e) {
                 throw new RuntimeException(e);
             }
         }));
 
-        MulticastMessage multicastMessage = MulticastMessage.builder()
-                .addAllTokens(tokens)
-                .setNotification(Notification.builder()
-                        .setTitle(String.format("Преподаватель изменил кабинет на %s", map.get("date").toString()
-                                .split(" ")[0]))
-                        .setBody(String.format("№ пары %d : %s", map.get("pair"), map.get("classroom")))
-                        .build())
-                .build();
-        firebaseMessaging.sendMulticast(multicastMessage);
+        if (tokens.size() > 0) {
+            MulticastMessage multicastMessage = MulticastMessage.builder()
+                    .addAllTokens(tokens)
+                    .setNotification(Notification.builder()
+                            .setTitle(String.format("Преподаватель изменил кабинет на %s", map.get("date").toString()
+                                    .split(" ")[0]))
+                            .setBody(String.format("№ пары %d : %s", map.get("pair"), map.get("classroom")))
+                            .build())
+                    .build();
+            firebaseMessaging.sendMulticast(multicastMessage);
+        }
     }
 
     @Async
@@ -201,6 +206,26 @@ public class FirebaseService {
                             .build())
                     .build();
             firebaseMessaging.sendMulticast(multicastMessage);
+        }
+    }
+
+    @Async
+    @RabbitListener(queues = CERTIFICATE_NOTIFICATION)
+    public void notificationUsers(List<String> emails) throws FirebaseMessagingException {
+        for (String email : emails) {
+            User user = userRepository.findByEmail(email)
+                    .orElseThrow(() -> new IllegalArgumentException(String.format("User %s not found", email)));
+            if (!user.getDevice().isEmpty()) {
+                Set<String> tokens = user.getDevice().stream().map(FCM::getToken).collect(Collectors.toSet());
+                MulticastMessage multicastMessage = MulticastMessage.builder()
+                        .addAllTokens(tokens)
+                        .setNotification(Notification.builder()
+                                .setTitle("Система")
+                                .setBody(("Ваша справка готова. Можете подойти и забрать ее."))
+                                .build())
+                        .build();
+                firebaseMessaging.sendMulticast(multicastMessage);
+            }
         }
     }
 

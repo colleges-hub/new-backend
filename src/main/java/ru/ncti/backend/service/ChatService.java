@@ -64,15 +64,32 @@ public class ChatService {
         PublicChat publicChat = new PublicChat();
         publicChat.getUsers().add(user);
 
+        List<String> list = new ArrayList<>();
+
         if (!request.getIds().isEmpty()) {
             for (Long id :
                     request.getIds()) {
-                publicChat.getUsers().add(userRepository.findById(id).orElse(null));
+                User mbUser = userRepository.findById(id).orElse(null);
+                publicChat.getUsers().add(mbUser);
+                list.add(mbUser.getUsername());
             }
         }
 
+        list.add(user.getUsername());
+
         publicChat.setName(request.getName());
         publicChatRepository.save(publicChat);
+
+        for (String l : list) {
+            simpMessagingTemplate.convertAndSend("/topic/" + l + "/chats",
+                    List.of(ViewChatResponse.builder()
+                            .id(publicChat.getId())
+                            .name(publicChat.getName())
+                            .type("PUBLIC")
+                            .photo(null)
+                            .build()));
+        }
+
         return "Public Chat was created";
     }
 
@@ -90,7 +107,7 @@ public class ChatService {
                 .id(chat.getId())
                 .name(chat.getName())
                 .type("PUBLIC")
-                .photo(URL + chat.getPhoto())
+                .photo(chat.getPhoto() == null ? null : (URL + chat.getPhoto()))
                 .build()));
 
         pChat.forEach(chat -> {
@@ -99,7 +116,7 @@ public class ChatService {
                     .id(chat.getId())
                     .name(String.format("%s %s", chatName.getFirstname(), chatName.getLastname()))
                     .type("PRIVATE")
-                    .photo(URL + chatName.getPhoto())
+                    .photo(chatName.getPhoto() == null ? null : (URL + chatName.getPhoto()))
                     .build());
         });
 
@@ -237,6 +254,7 @@ public class ChatService {
                         .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
                 Message message = Message.builder()
+                        .id(UUID.randomUUID())
                         .sender(first)
                         .text(dto.getText())
                         .type("text")

@@ -85,23 +85,6 @@ public class UserService {
     private final RabbitTemplate rabbitTemplate;
     private final MinioClient minioClient;
 
-    public UserResponse getProfile() {
-        var auth = SecurityContextHolder.getContext().getAuthentication();
-        User user = (User) auth.getPrincipal();
-
-        String photo = user.getPhoto() != null ? String.format("http://%s:9000/%s/%s", host, bucketName, user.getPhoto()) : null;
-
-        return UserResponse.builder()
-                .id(user.getId())
-                .firstname(user.getFirstname())
-                .lastname(user.getLastname())
-                .surname(user.getSurname())
-                .email(user.getUsername())
-                .role(user.getRoles())
-                .photo(photo)
-                .build();
-    }
-
     public Map<String, Set<ScheduleResponse>> getSchedule() {
         var auth = SecurityContextHolder.getContext().getAuthentication();
         User user = (User) auth.getPrincipal();
@@ -243,7 +226,7 @@ public class UserService {
 
         PrivateChat privateChat = privateChatRepository.findByUser1AndUser2OrUser1AndUser2(currentUser, candidate, candidate, currentUser);
 
-        String photo = currentUser.getPhoto() != null ? String.format("http://%s:9000/%s/%s", host, bucketName, currentUser.getPhoto()) : null;
+        String photo = candidate.getPhoto() != null ? String.format("http://%s:9000/%s/%s", host, bucketName, currentUser.getPhoto()) : null;
 
         return UserResponse.builder()
                 .id(candidate.getId())

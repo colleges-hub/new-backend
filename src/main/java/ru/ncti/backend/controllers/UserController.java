@@ -41,11 +41,6 @@ public class UserController {
     @Value("${url.news.getter}")
     private String urlNewsGetter;
 
-    @GetMapping("/profile")
-    public ResponseEntity<UserResponse> getProfile() {
-        return ResponseEntity.status(HttpStatus.OK).body(userService.getProfile());
-    }
-
     @GetMapping("/schedule")
     public ResponseEntity<Map<String, Set<ScheduleResponse>>> getSchedule() {
         return ResponseEntity.status(HttpStatus.OK).body(userService.getSchedule());

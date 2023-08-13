@@ -25,11 +25,13 @@ public class WebSocketEventListener {
     @EventListener
     public void handlerSubscribe(SessionSubscribeEvent event) {
         String uuid = Objects.requireNonNull(event.getMessage()
-                .getHeaders().get("simpDestination")).toString().split("/")[2].trim();
+                .getHeaders().get("simpDestination")).toString().split("/")[3].trim();
         String name = Objects.requireNonNull(event.getUser()).getName();
-        redisService.setValue("user:" + name, uuid);
+        if (!uuid.equals("chats")) {
+            redisService.setValue("user:" + name, uuid);
+            redisService.setValueSet(uuid, name);
+        }
 //        log.info(String.valueOf(event.getMessage().getHeaders().get("simpSessionId")));
-        redisService.setValueSet(uuid, name);
     }
 
     @EventListener

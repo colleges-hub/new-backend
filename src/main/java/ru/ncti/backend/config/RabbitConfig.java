@@ -17,6 +17,7 @@ public class RabbitConfig {
     public static final String PRIVATE_CHAT_NOTIFICATION = "private_chat_notification";
     public static final String UPDATE_CLASSROOM = "update_classroom";
     public static final String CHANGE_SCHEDULE = "change_schedule";
+    public static final String CERTIFICATE_NOTIFICATION = "certificate_notification";
 
 
     @Bean
@@ -47,5 +48,10 @@ public class RabbitConfig {
     @Bean
     public Queue scheduleNotificationQueue() {
         return new Queue(CHANGE_SCHEDULE);
+    }
+
+    @Bean
+    public Queue certificateNotificationQueue() {
+        return new Queue(CERTIFICATE_NOTIFICATION);
     }
 }
