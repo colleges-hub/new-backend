@@ -192,14 +192,16 @@ public class FirebaseService {
         }));
         log.info(tokens.toString());
 
-        MulticastMessage multicastMessage = MulticastMessage.builder()
-                .addAllTokens(tokens)
-                .setNotification(Notification.builder()
-                        .setTitle("Изменения в расписании")
-                        .setBody(String.format("Расписание на %s было изменено", map.get("day")))
-                        .build())
-                .build();
-        firebaseMessaging.sendMulticast(multicastMessage);
+        if (tokens.size() != 0) {
+            MulticastMessage multicastMessage = MulticastMessage.builder()
+                    .addAllTokens(tokens)
+                    .setNotification(Notification.builder()
+                            .setTitle("Изменения в расписании")
+                            .setBody(String.format("Расписание на %s было изменено", map.get("day")))
+                            .build())
+                    .build();
+            firebaseMessaging.sendMulticast(multicastMessage);
+        }
     }
 
     @Async
