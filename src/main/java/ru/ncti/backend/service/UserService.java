@@ -28,6 +28,7 @@ import ru.ncti.backend.model.Sample;
 import ru.ncti.backend.model.Schedule;
 import ru.ncti.backend.model.Subject;
 import ru.ncti.backend.model.User;
+import ru.ncti.backend.repository.FCMRepository;
 import ru.ncti.backend.repository.GroupRepository;
 import ru.ncti.backend.repository.PrivateChatRepository;
 import ru.ncti.backend.repository.SampleRepository;
@@ -83,6 +84,7 @@ public class UserService {
     private final PrivateChatRepository privateChatRepository;
     private final SubjectRepository subjectRepository;
     private final RabbitTemplate rabbitTemplate;
+    private final FCMRepository fcmRepository;
     private final MinioClient minioClient;
 
     public Map<String, Set<ScheduleResponse>> getSchedule() {
@@ -272,6 +274,7 @@ public class UserService {
         return users;
     }
 
+    @Transactional(readOnly = false)
     public String addFCMToken(FCMRequest dto) {
         var auth = SecurityContextHolder.getContext().getAuthentication();
         User user = (User) auth.getPrincipal();
@@ -279,10 +282,9 @@ public class UserService {
         FCM fcm = new FCM();
         fcm.setToken(dto.getToken());
         fcm.setDevice(dto.getDevice());
+        fcm.setUser(user);
 
-        user.getDevice().add(fcm);
-
-        userRepository.save(user);
+        fcmRepository.save(fcm);
 
         return "Token was added";
     }
