@@ -116,7 +116,7 @@ public class FirebaseService {
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
         PrivateChat chat = privateChatRepository.findById(UUID.fromString(map.get("chat")))
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+                .orElseThrow(() -> new IllegalArgumentException("Chat not found"));
 
         User user2 = chat.getChatName(user);
 

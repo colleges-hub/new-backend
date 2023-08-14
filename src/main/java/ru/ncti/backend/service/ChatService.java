@@ -269,7 +269,18 @@ public class ChatService {
                         .build();
                 message.setPrivateChat(newPrivateChat);
                 privateChatRepository.save(newPrivateChat);
-                return createMessage(message, first);
+                return MessageResponse.builder()
+                        .id(message.getId())
+                        .text(message.getText())
+                        .type("text")
+                        .author(UserMessageResponse.builder()
+                                .id(String.valueOf(message.getSender().getId()))
+                                .firstName(message.getSender().getFirstname())
+                                .lastName(message.getSender().getLastname())
+                                .imageUrl(message.getSender().getPhoto())
+                                .build())
+                        .createdAt(message.getCreatedAt().toEpochMilli())
+                        .build();
             } else {
                 User user = userRepository.findByEmail(principal.getName())
                         .orElseThrow(() -> new IllegalArgumentException("User not found"));
