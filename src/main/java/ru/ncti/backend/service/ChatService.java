@@ -287,6 +287,7 @@ public class ChatService {
 
                 Message message = Message.builder()
                         .sender(user)
+                        .type("text")
                         .text(dto.getText())
                         .privateChat(privateChat.get())
                         .createdAt(Instant.now())
