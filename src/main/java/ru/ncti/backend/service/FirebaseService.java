@@ -29,8 +29,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 import static ru.ncti.backend.config.RabbitConfig.CERTIFICATE_NOTIFICATION;
@@ -47,9 +45,7 @@ import static ru.ncti.backend.config.RabbitConfig.UPDATE_CLASSROOM;
 @Slf4j
 @RequiredArgsConstructor
 public class FirebaseService {
-
-    // TODO: change all
-
+    
     private final PublicChatRepository publicChatRepository;
     private final UserRepository userRepository;
     private final PrivateChatRepository privateChatRepository;
@@ -146,66 +142,39 @@ public class FirebaseService {
 
     @Async
     @RabbitListener(queues = UPDATE_CLASSROOM)
-    public void sendNotificationAboutChangeClassroom(Map<String, ?> map) throws FirebaseMessagingException {
-        Group group = groupRepository.findByName(map.get("group").toString())
+    public void sendNotificationAboutChangeClassroom(Map<String, String> map) throws FirebaseMessagingException {
+        Group group = groupRepository.findByName(map.get("group"))
                 .orElseThrow(() -> new IllegalArgumentException("Group not found"));
 
         List<User> students = userRepository.findAllByGroupOrderByLastname(group);
-
-        Set<String> tokens = new HashSet<>();
-
-        students.forEach(student -> student.getDevice().forEach(device -> {
-            try {
-                if (isToken(device.getToken()).get()) {
-                    tokens.add(device.getToken());
-                }
-            } catch (InterruptedException | ExecutionException e) {
-                throw new RuntimeException(e);
-            }
-        }));
+        Set<String> tokens = students.parallelStream()
+                .flatMap(student -> student.getDevice().stream().map(FCM::getToken))
+                .collect(Collectors.toSet());
 
         if (tokens.size() > 0) {
-            MulticastMessage multicastMessage = MulticastMessage.builder()
-                    .addAllTokens(tokens)
-                    .setNotification(Notification.builder()
-                            .setTitle(String.format("Преподаватель изменил кабинет на %s", map.get("date").toString()
-                                    .split(" ")[0]))
-                            .setBody(String.format("№ пары %d : %s", map.get("pair"), map.get("classroom")))
-                            .build())
-                    .build();
-            firebaseMessaging.sendMulticast(multicastMessage);
+            String title = String.format("Преподаватель изменил кабинет на %s", map.get("date")
+                    .split(" ")[0]);
+            String body = String.format("№ пары %s : %s", map.get("pair"), map.get("classroom"));
+            sendNotification(tokens, title, body);
         }
     }
 
     @Async
+    @Transactional(readOnly = true)
     @RabbitListener(queues = CHANGE_SCHEDULE)
     public void notificationChangeSchedule(Map<String, String> map) throws FirebaseMessagingException {
         Group group = groupRepository.findById(Long.valueOf(map.get("group")))
                 .orElseThrow(() -> new IllegalArgumentException("Group not found"));
 
         List<User> students = userRepository.findAllByGroupOrderByLastname(group);
-
-        Set<String> tokens = new HashSet<>();
-
-        students.forEach(student -> student.getDevice().forEach(device -> {
-            try {
-                if (isToken(device.getToken()).get())
-                    tokens.add(device.getToken());
-            } catch (InterruptedException | ExecutionException e) {
-                throw new RuntimeException(e);
-            }
-        }));
-        log.info(tokens.toString());
+        Set<String> tokens = students.parallelStream()
+                .flatMap(student -> student.getDevice().stream().map(FCM::getToken))
+                .collect(Collectors.toSet());
 
         if (tokens.size() != 0) {
-            MulticastMessage multicastMessage = MulticastMessage.builder()
-                    .addAllTokens(tokens)
-                    .setNotification(Notification.builder()
-                            .setTitle("Изменения в расписании")
-                            .setBody(String.format("Расписание на %s было изменено", map.get("day")))
-                            .build())
-                    .build();
-            firebaseMessaging.sendMulticast(multicastMessage);
+            String title = "Изменения в расписании";
+            String body = String.format("Расписание на %s было изменено", map.get("day"));
+            sendNotification(tokens, title, body);
         }
     }
 
@@ -217,21 +186,23 @@ public class FirebaseService {
                     .orElseThrow(() -> new IllegalArgumentException(String.format("User %s not found", email)));
             if (!user.getDevice().isEmpty()) {
                 Set<String> tokens = user.getDevice().stream().map(FCM::getToken).collect(Collectors.toSet());
-                MulticastMessage multicastMessage = MulticastMessage.builder()
-                        .addAllTokens(tokens)
-                        .setNotification(Notification.builder()
-                                .setTitle("Система")
-                                .setBody(("Ваша справка готова. Можете подойти и забрать ее."))
-                                .build())
-                        .build();
-                firebaseMessaging.sendMulticast(multicastMessage);
+                String title = "Система";
+                String body = "Ваша справка готова. Можете подойти и забрать ее.";
+                sendNotification(tokens, title, body);
             }
         }
     }
 
-    @Async
-    CompletableFuture<Boolean> isToken(String token) {
-        return CompletableFuture.completedFuture(token != null);
+
+    private synchronized void sendNotification(Set<String> tokens, String title, String body) throws FirebaseMessagingException {
+        MulticastMessage multicastMessage = MulticastMessage.builder()
+                .addAllTokens(tokens)
+                .setNotification(Notification.builder()
+                        .setTitle(title)
+                        .setBody(body)
+                        .build())
+                .build();
+        firebaseMessaging.sendMulticast(multicastMessage);
     }
 
 }

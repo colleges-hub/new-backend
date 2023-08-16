@@ -57,20 +57,11 @@ public class User implements UserDetails {
     @Column(name = "password")
     private String password;
 
-    @OneToMany(mappedBy = "user", fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
     private Set<FCM> device = new HashSet<>();
 
     @Column(name = "photo")
     private String photo;
-
-    @Column(nullable = false)
-    private Boolean isAccountNonExpired = true;
-    @Column(nullable = false)
-    private Boolean isAccountNonLocked = true;
-    @Column(nullable = false)
-    private Boolean isCredentialsNonExpired = true;
-    @Column(nullable = false)
-    private Boolean isEnabled = true;
 
     @ManyToMany(cascade = CascadeType.REMOVE, fetch = FetchType.EAGER)
     @JoinTable(
@@ -91,6 +82,15 @@ public class User implements UserDetails {
             authority.add(new SimpleGrantedAuthority(role.getName()));
         return authority;
     }
+
+    @Column(nullable = false)
+    private Boolean isAccountNonExpired = true;
+    @Column(nullable = false)
+    private Boolean isAccountNonLocked = true;
+    @Column(nullable = false)
+    private Boolean isCredentialsNonExpired = true;
+    @Column(nullable = false)
+    private Boolean isEnabled = true;
 
     @Override
     public String getUsername() {

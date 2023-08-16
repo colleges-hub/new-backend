@@ -77,7 +77,7 @@ public class UserController {
 
     @GetMapping("/users")
     public ResponseEntity<?> getUsers(@RequestParam(defaultValue = "0") int page,
-                                      @RequestParam(defaultValue = "10") int size) {
+                                      @RequestParam(defaultValue = "120") int size) {
         return ResponseEntity.status(HttpStatus.OK).body(userService.getUsersWithPagination(page, size));
     }
 

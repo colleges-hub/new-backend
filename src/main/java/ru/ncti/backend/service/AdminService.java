@@ -432,7 +432,6 @@ public class AdminService {
     }
 
     public String changeSchedule(ScheduleRequest request) {
-        log.info(request.getClassroom());
         Group group = groupRepository.findById(request.getGroup()).orElseThrow(() -> {
             log.error(String.format("Group with id %d not found", request.getGroup()));
             return new IllegalArgumentException(String.format("Group with id %d not found", request.getGroup()));

@@ -30,6 +30,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 import static ru.ncti.backend.config.RabbitConfig.PRIVATE_CHAT_NOTIFICATION;
 import static ru.ncti.backend.config.RabbitConfig.PUBLIC_CHAT_NOTIFICATION;
@@ -237,7 +238,7 @@ public class ChatService {
                     .sender(user)
                     .text(dto.getText())
                     .privateChat(privateChat)
-                    .type("type")
+                    .type("text")
                     .createdAt(Instant.now())
                     .build();
 
@@ -269,6 +270,29 @@ public class ChatService {
                         .build();
                 message.setPrivateChat(newPrivateChat);
                 privateChatRepository.save(newPrivateChat);
+
+                CompletableFuture.runAsync(() -> {
+                    log.info("Async task started");
+                    log.info(privateChat.get().getId().toString());
+                    // Ожидание успешного сохранения чата и сообщения
+                    PrivateChat chat = privateChatRepository.findById(id)
+                            .orElse(null); // Передайте null, если чат не найден
+
+                    if (chat != null) {
+                        String username = first.getUsername();
+                        String text = message.getText();
+
+                        HashMap<String, Object> messageData = new HashMap<>();
+                        messageData.put("chat", chat.getId());
+                        messageData.put("user", username);
+                        messageData.put("text", text);
+
+                        rabbitTemplate.convertAndSend(PRIVATE_CHAT_NOTIFICATION, messageData);
+                    }
+
+                    log.info("Async task completed");
+                });
+
                 return MessageResponse.builder()
                         .id(message.getId())
                         .text(message.getText())
