@@ -13,14 +13,18 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.ncti.backend.api.response.ViewChatResponse;
+import ru.ncti.backend.model.ChatData;
 import ru.ncti.backend.model.FCM;
 import ru.ncti.backend.model.Group;
 import ru.ncti.backend.model.PrivateChat;
 import ru.ncti.backend.model.PublicChat;
 import ru.ncti.backend.model.User;
+import ru.ncti.backend.model.UserInChat;
+import ru.ncti.backend.repository.ChatDataRepository;
 import ru.ncti.backend.repository.GroupRepository;
 import ru.ncti.backend.repository.PrivateChatRepository;
 import ru.ncti.backend.repository.PublicChatRepository;
+import ru.ncti.backend.repository.UserInChatRepository;
 import ru.ncti.backend.repository.UserRepository;
 
 import java.util.HashSet;
@@ -45,14 +49,15 @@ import static ru.ncti.backend.config.RabbitConfig.UPDATE_CLASSROOM;
 @Slf4j
 @RequiredArgsConstructor
 public class FirebaseService {
-    
+
     private final PublicChatRepository publicChatRepository;
     private final UserRepository userRepository;
     private final PrivateChatRepository privateChatRepository;
-    private final RedisService redisService;
     private final FirebaseMessaging firebaseMessaging;
     private final ObjectMapper objectMapper;
     private final GroupRepository groupRepository;
+    private final ChatDataRepository chatDataRepository;
+    private final UserInChatRepository userInChatRepository;
 
     @Async
     @RabbitListener(queues = PUBLIC_CHAT_NOTIFICATION)
@@ -65,17 +70,21 @@ public class FirebaseService {
 
         Set<User> usersInChat = publicChat.getUsers();
 
-        Set<String> onlineUserEmails = redisService.getValueSet(map.get("chat"));
-        Set<User> userOnline = onlineUserEmails.stream()
+
+        UserInChat onlineUserEmails = userInChatRepository.findById(map.get("chat")).orElseThrow(null);
+
+        Set<User> userOnline = onlineUserEmails.getEmail().stream()
                 .map(userRepository::findByEmail)
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .collect(Collectors.toSet());
 
         if (userOnline.size() != usersInChat.size()) {
-            // Users offline
+
             Set<User> userOffline = new HashSet<>(usersInChat);
             userOffline.removeAll(userOnline);
+
+            log.info(userOffline.toString());
 
             Set<String> fcmTokens = new HashSet<>();
 
@@ -116,11 +125,11 @@ public class FirebaseService {
 
         User user2 = chat.getChatName(user);
 
-        String chatWithUser = redisService.getValue(String.format("user:%s", user2.getUsername()));
-
-        if (chatWithUser == null || !chatWithUser.equals(map.get("chat"))) {
+        Optional<ChatData> chatData = chatDataRepository.findByUsername(user2.getUsername());
+        if (chatData.isEmpty() || !chatData.get().getChat().equals(map.get("chat"))) {
             Set<String> fcmToken = user2.getDevice().stream().map(FCM::getToken).collect(Collectors.toSet());
             String name = String.format("%s %s", user.getFirstname(), user.getLastname());
+            log.info(fcmToken.toString());
             if (fcmToken.size() > 0) {
                 MulticastMessage message = MulticastMessage.builder()
                         .addAllTokens(fcmToken)
@@ -138,6 +147,7 @@ public class FirebaseService {
                 firebaseMessaging.sendMulticast(message);
             }
         }
+
     }
 
     @Async

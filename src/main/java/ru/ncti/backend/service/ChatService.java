@@ -174,13 +174,13 @@ public class ChatService {
         if (type.equals("PUBLIC")) {
             PublicChat chat = publicChatRepository.findById(id)
                     .orElseThrow(() -> new IllegalArgumentException("Chat not found"));
-            List<Message> messages = messageRepository.findAllByPublicChatOrderByCreatedAtAsc(chat);
+            List<Message> messages = messageRepository.findAllByPublicChatOrderByCreatedAtDesc(chat);
 
             return generatedMessage(messages);
         } else if (type.equals("PRIVATE")) {
             PrivateChat chat = privateChatRepository.findById(id)
                     .orElseThrow(() -> new IllegalArgumentException("Chat not found"));
-            List<Message> messages = messageRepository.findAllByPrivateChatOrderByCreatedAtAsc(chat);
+            List<Message> messages = messageRepository.findAllByPrivateChatOrderByCreatedAtDesc(chat);
 
             return generatedMessage(messages);
         }

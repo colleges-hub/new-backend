@@ -14,7 +14,7 @@ import java.util.UUID;
  */
 @Repository
 public interface MessageRepository extends JpaRepository<Message, UUID> {
-    List<Message> findAllByPublicChatOrderByCreatedAtAsc(PublicChat publicChat);
+    List<Message> findAllByPublicChatOrderByCreatedAtDesc(PublicChat publicChat);
 
-    List<Message> findAllByPrivateChatOrderByCreatedAtAsc(PrivateChat chat);
+    List<Message> findAllByPrivateChatOrderByCreatedAtDesc(PrivateChat chat);
 }

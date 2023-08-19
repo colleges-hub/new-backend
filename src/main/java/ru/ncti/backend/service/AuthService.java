@@ -30,7 +30,6 @@ public class AuthService {
     private final UserDetailsServiceImpl userDetailsService;
     private final UserRepository userRepository;
 
-
     public Map<String, String> login(AuthRequest request) {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword()));
