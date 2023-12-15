@@ -1,14 +1,10 @@
 package ru.ncti.backend.api.request;
 
-import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.sql.Date;
 
-/**
- * user: ichuvilin
- */
 @Getter
 @Setter
 public class ScheduleRequest {

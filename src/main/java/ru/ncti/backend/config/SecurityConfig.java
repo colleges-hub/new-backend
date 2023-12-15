@@ -16,9 +16,6 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import ru.ncti.backend.security.UserDetailsServiceImpl;
 import ru.ncti.backend.security.filters.JwtRequestFilter;
 
-/**
- * user: ichuvilin
- */
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor

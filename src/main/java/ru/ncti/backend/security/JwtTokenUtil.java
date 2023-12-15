@@ -10,12 +10,9 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * user: ichuvilin
- */
 @Component
 public class JwtTokenUtil {
-    
+
     @Value("${jwtSecret}")
     private String secret;
     private final Long jwtExpirationInMs = 604800000L; // 7 days

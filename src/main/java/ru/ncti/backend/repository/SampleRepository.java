@@ -8,9 +8,6 @@ import ru.ncti.backend.model.User;
 
 import java.util.List;
 
-/**
- * user: ichuvilin
- */
 @Repository
 public interface SampleRepository extends JpaRepository<Sample, Long> {
     List<Sample> findAllByTeacher(User user);

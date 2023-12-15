@@ -6,9 +6,6 @@ import ru.ncti.backend.model.Group;
 
 import java.util.Optional;
 
-/**
- * user: ichuvilin
- */
 @Repository
 public interface GroupRepository extends JpaRepository<Group, Long> {
     Optional<Group> findByName(String name);

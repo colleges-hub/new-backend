@@ -1,6 +1,5 @@
 package ru.ncti.backend.model;
 
-
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -19,18 +18,13 @@ import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
-import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-/**
- * user: ichuvilin
- */
 @Getter
 @Setter
 @Entity
@@ -57,13 +51,7 @@ public class User implements UserDetails {
     @Column(name = "password")
     private String password;
 
-    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
-    private Set<FCM> device = new HashSet<>();
-
-    @Column(name = "photo")
-    private String photo;
-
-    @ManyToMany(cascade = CascadeType.REMOVE, fetch = FetchType.EAGER)
+    @ManyToMany(cascade = CascadeType.REMOVE, fetch = FetchType.LAZY)
     @JoinTable(
             name = "user_role",
             joinColumns = @JoinColumn(name = "user_id"),

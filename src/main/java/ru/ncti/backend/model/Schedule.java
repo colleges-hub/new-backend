@@ -21,9 +21,6 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import java.util.Date;
 
-/**
- * user: ichuvilin
- */
 @Getter
 @Setter
 @Entity

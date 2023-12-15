@@ -56,7 +56,6 @@ import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.temporal.WeekFields;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -69,10 +68,6 @@ import java.util.stream.Collectors;
 import static ru.ncti.backend.config.RabbitConfig.CHANGE_SCHEDULE;
 import static ru.ncti.backend.config.RabbitConfig.EMAIL_UPDATE;
 
-
-/**
- * user: ichuvilin
- */
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -90,21 +85,14 @@ public class AdminService {
     private final ScheduleRepository scheduleRepository;
     private final RabbitTemplate rabbitTemplate;
 
-
+    @Transactional(readOnly = true)
     public UserResponse getProfile() {
         var auth = SecurityContextHolder.getContext().getAuthentication();
         User user = (User) auth.getPrincipal();
-        UserResponse response = convert(user, UserResponse.class);
-        if (user.getPhoto() != null)
-            response.setPhoto(user.getPhoto());
-        response.setRole(user.getRoles());
-
-        log.info(String.format("Admin %s show your profile", user.getUsername()));
-
-        return response;
+        return convert(user, UserResponse.class);
     }
 
-    @Transactional(readOnly = false)
+    @Transactional
     public String createUser(UserRequest dto) {
         User user = convert(dto, User.class);
         Set<Role> roles = new HashSet<>(dto.getRole().size());
@@ -126,6 +114,7 @@ public class AdminService {
         return "User was added";
     }
 
+    @Transactional(readOnly = true)
     public List<SectionResponse> getSections() {
         return sectionRepository.findAll().stream().map(
                 section -> SectionResponse.builder()
@@ -135,12 +124,14 @@ public class AdminService {
         ).toList();
     }
 
+    @Transactional
     public String createSection(SectionRequest request) {
         Section section = modelMapper.map(request, Section.class);
         sectionRepository.save(section);
         return "Section was added";
     }
 
+    @Transactional
     public String createGroup(GroupRequest request) {
         if (groupRepository.findByName(request.getName()).isPresent()) {
             log.error(String.format("Group %s already exist", request.getName()));
@@ -160,6 +151,7 @@ public class AdminService {
         return "Group was added";
     }
 
+    @Transactional(readOnly = true)
     public List<RoleResponse> getRoles() {
         return roleRepository.findAll().stream().map(
                 role -> RoleResponse.builder()
@@ -169,12 +161,15 @@ public class AdminService {
         ).toList();
     }
 
+    @Transactional(readOnly = true)
     public List<Subject> getSubjects() {
+        // TODO: rework
         return subjectRepository.findAllByOrderByName();
     }
 
-    // TODO: all rework
+    @Transactional
     public String updateProfile(AuthRequest dto) {
+        // TODO: all rework
         var auth = SecurityContextHolder.getContext().getAuthentication();
         User user = (User) auth.getPrincipal();
 
@@ -189,6 +184,7 @@ public class AdminService {
         return "Data updated";
     }
 
+    @Transactional
     public String createTemplate(TemplateRequest request) {
         log.info(request.toString());
         Group g = groupRepository.findById(request.getGroup())
@@ -220,6 +216,7 @@ public class AdminService {
         return "Template was added";
     }
 
+    @Transactional
     public String createSubject(SubjectRequest request) {
         if (subjectRepository.findByName(request.getName()).isPresent()) {
             log.error(String.format("Subject %s already exist", request.getName()));
@@ -229,87 +226,79 @@ public class AdminService {
         return "Subject was added";
     }
 
-
     public String uploadSubjects(MultipartFile file) throws IOException {
         try (InputStream inputStream = file.getInputStream()) {
             CSVReader csvReader = new CSVReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
             List<SubjectRequest> subjects = new CsvToBeanBuilder<SubjectRequest>(csvReader)
                     .withType(SubjectRequest.class).build().parse();
 
-            List<CompletableFuture<Void>> futures = subjects.stream().map(
+            subjects.forEach(
                     subject -> CompletableFuture.runAsync(() -> createSubject(subject))
-            ).toList();
+            );
         }
 
         return "Subjects upload";
     }
 
-    @Transactional(readOnly = false)
+    @Transactional
     public String uploadUsers(MultipartFile file) throws IOException, CsvValidationException {
 
-        try (InputStream inputStream = file.getInputStream()) {
-            CSVReader csvReader = new CSVReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
+        try (InputStream inputStream = file.getInputStream();
+             CSVReader csvReader = new CSVReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
             List<UploadUserRequest> users = new CsvToBeanBuilder<UploadUserRequest>(csvReader)
                     .withType(UploadUserRequest.class).build().parse();
 
-            List<CompletableFuture<Void>> futures = users.stream()
-                    .map(user -> CompletableFuture.runAsync(() -> {
-                        try {
-                            UserRequest usr = convert(user, UserRequest.class);
-                            usr.setRole(List.of(user.getRole()));
-                            createUser(usr);
-                        } catch (IllegalArgumentException e) {
-                            log.error(e.getMessage());
-                            throw new IllegalArgumentException(e);
-                        }
-                    })).toList();
-
-            CompletableFuture<Void> allFutures = CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
-            allFutures.join();
-            csvReader.close();
+            users.forEach(user -> CompletableFuture.runAsync(() -> {
+                try {
+                    UserRequest usr = convert(user, UserRequest.class);
+                    usr.setRole(List.of(user.getRole()));
+                    createUser(usr);
+                } catch (IllegalArgumentException e) {
+                    log.error(e.getMessage());
+                    throw new IllegalArgumentException(e);
+                }
+            }));
         }
 
         return "Uploaded users";
     }
 
+    @Transactional
     public String uploadTemplate(MultipartFile file) throws IOException {
 
-        try (InputStream inputStream = file.getInputStream()) {
-            CSVReader csvReader = new CSVReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
+        try (InputStream inputStream = file.getInputStream();
+             CSVReader csvReader = new CSVReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))
+        ) {
             List<UploadTemplateRequest> schedule = new CsvToBeanBuilder<UploadTemplateRequest>(csvReader)
                     .withType(UploadTemplateRequest.class).build().parse();
 
-            List<CompletableFuture<Void>> futures = schedule.stream()
-                    .map(s -> CompletableFuture.runAsync(() -> {
-                        Group g = groupRepository.findByName(s.getGroup())
-                                .orElseThrow(() -> {
-                                    log.error(String.format("Group %s not found", s.getGroup()));
-                                    return new IllegalArgumentException(String.format("Group %s not found", s.getGroup()));
-                                });
-                        String[] teacherName = s.getTeacher().split(" ");
-                        User t = userRepository.findByLastnameAndFirstname(teacherName[0], teacherName[1])
-                                .orElseThrow(() -> {
-                                    log.error(String.format("Teacher %s not found", s.getTeacher()));
-                                    return new IllegalArgumentException(String.format("Teacher %s not found", s.getTeacher()));
-                                });
+            schedule.forEach(s -> CompletableFuture.runAsync(() -> {
+                Group g = groupRepository.findByName(s.getGroup())
+                        .orElseThrow(() -> {
+                            log.error(String.format("Group %s not found", s.getGroup()));
+                            return new IllegalArgumentException(String.format("Group %s not found", s.getGroup()));
+                        });
+                String[] teacherName = s.getTeacher().split(" ");
+                User t = userRepository.findByLastnameAndFirstname(teacherName[0], teacherName[1])
+                        .orElseThrow(() -> {
+                            log.error(String.format("Teacher %s not found", s.getTeacher()));
+                            return new IllegalArgumentException(String.format("Teacher %s not found", s.getTeacher()));
+                        });
 
-                        Sample sch = convert(s, Sample.class);
-                        Subject subject = subjectRepository.findByName(s.getSubject()).orElse(null);
-                        sch.setGroup(g);
-                        sch.setTeacher(t);
-                        sch.setParity(s.getWeekType());
-                        sch.setSubject(subject);
-                        sampleRepository.save(sch);
-                    })).toList();
-
-            CompletableFuture<Void> allFutures = CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
-            allFutures.join();
-            csvReader.close();
+                Sample sch = convert(s, Sample.class);
+                Subject subject = subjectRepository.findByName(s.getSubject()).orElse(null);
+                sch.setGroup(g);
+                sch.setTeacher(t);
+                sch.setParity(s.getWeekType());
+                sch.setSubject(subject);
+                sampleRepository.save(sch);
+            }));
         }
 
         return "Uploaded schedule";
     }
 
+    @Transactional(readOnly = true)
     public List<UserResponse> getStudentsByGroup(Long group) {
         Group g = groupRepository.findById(group).orElseThrow(() -> {
             log.error(String.format("Group %s not found", group));
@@ -327,6 +316,7 @@ public class AdminService {
     }
 
 
+    @Transactional(readOnly = true)
     public List<UserResponse> getUsersByType(String type) {
         Role role = null;
         if (type.equalsIgnoreCase("student")) {
@@ -349,6 +339,7 @@ public class AdminService {
                         .build()).toList();
     }
 
+    @Transactional(readOnly = true)
     public List<GroupResponse> getGroups() {
         return groupRepository.findAll().stream().map(
                 group -> GroupResponse.builder()
@@ -361,28 +352,31 @@ public class AdminService {
         ).toList();
     }
 
+    @Transactional(readOnly = true)
     public UserResponse getUserById(Long id) {
         return convert(userRepository.findById(id).orElseThrow(() -> {
-            log.error(String.format("User with id %d not found", id));
             return new IllegalArgumentException(String.format("User with id %d not found", id));
         }), UserResponse.class);
     }
 
     // todo: think how to change this
+    @Transactional(readOnly = true)
     public Group getGroupById(Long id) {
         Group g = groupRepository.findById(id).orElseThrow(() -> {
-            log.error(String.format("Group with id %d not found", id));
-            return new IllegalArgumentException(String.format("Group with id %d not found", id));
-        });
+                    throw new IllegalArgumentException(String.format("Group with id %d not found", id));
+                }
+        );
         g.setSample(getTypeSchedule(g));
 
         return g;
     }
 
+    @Transactional(readOnly = true)
     public Subject getSubjectById(Long id) {
         return subjectRepository.findById(id).orElse(null);
     }
 
+    @Transactional
     public String deleteUserById(Long id) {
         User student = userRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException(String.format("User with id %d not found", id)));
@@ -395,6 +389,7 @@ public class AdminService {
         return "User successfully deleted";
     }
 
+    @Transactional
     public String createSpeciality(SpecialityRequest dto) {
         if (specialityRepository.findById(dto.getId()).isPresent()) {
             log.error(String.format("Speciality %s already exist", dto.getName()));
@@ -405,18 +400,14 @@ public class AdminService {
     }
 
     public String uploadSpeciality(MultipartFile file) throws IOException {
-        try (InputStream inputStream = file.getInputStream()) {
-            CSVReader csvReader = new CSVReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
+        try (InputStream inputStream = file.getInputStream();
+             CSVReader csvReader = new CSVReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))
+        ) {
             List<SpecialityRequest> specialities = new CsvToBeanBuilder<SpecialityRequest>(csvReader)
                     .withType(SpecialityRequest.class).build().parse();
 
-            List<CompletableFuture<Void>> futures = specialities
-                    .stream()
-                    .map(s -> CompletableFuture.runAsync(() -> createSpeciality(s))).toList();
-
-            CompletableFuture<Void> allFutures = CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
-            allFutures.join();
-            csvReader.close();
+            specialities
+                    .forEach(s -> CompletableFuture.runAsync(() -> createSpeciality(s)));
         }
 
         return "Upload specialities";
@@ -431,6 +422,7 @@ public class AdminService {
         ).toList();
     }
 
+    @Transactional
     public String changeSchedule(ScheduleRequest request) {
         Group group = groupRepository.findById(request.getGroup()).orElseThrow(() -> {
             log.error(String.format("Group with id %d not found", request.getGroup()));
@@ -464,7 +456,7 @@ public class AdminService {
         return "Changes was added";
     }
 
-
+    @Transactional
     public String uploadChanges(MultipartFile file) throws IOException {
         SimpleDateFormat format = new SimpleDateFormat("dd.MM.yyyy");
         try (InputStream inputStream = file.getInputStream()) {
@@ -534,6 +526,7 @@ public class AdminService {
         return "Group successfully deleted";
     }
 
+    @Transactional
     public String updateCredentialUserById(Long id, AuthRequest request) {
         //todo: add send email with changed password
         User candidate = userRepository.findById(id).orElseThrow(() -> {
@@ -569,12 +562,8 @@ public class AdminService {
                 .to(dto.getEmail())
                 .subject("Добро пожаловать в приложение для колледжа!")
                 .template("welcome-email.html")
-                .properties(new HashMap<>() {{
-                    put("login", dto.getUsername());
-                    put("password", password);
-                }})
+                .properties(Map.of("login", dto.getUsername(), "password", password))
                 .build();
-
         rabbitTemplate.convertAndSend(EMAIL_UPDATE, email);
     }
 

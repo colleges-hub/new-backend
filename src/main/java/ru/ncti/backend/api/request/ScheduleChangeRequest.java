@@ -6,9 +6,6 @@ import lombok.ToString;
 
 import java.util.List;
 
-/**
- * user: ichuvilin
- */
 @Getter
 @Setter
 @ToString

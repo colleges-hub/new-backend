@@ -9,7 +9,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import ru.ncti.backend.api.request.AuthRequest;
 import ru.ncti.backend.model.User;
-import ru.ncti.backend.repository.UserRepository;
 import ru.ncti.backend.security.JwtTokenUtil;
 import ru.ncti.backend.security.UserDetailsServiceImpl;
 
@@ -17,9 +16,6 @@ import javax.servlet.http.HttpServletRequest;
 import java.util.Collections;
 import java.util.Map;
 
-/**
- * user: ichuvilin
- */
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -28,7 +24,6 @@ public class AuthService {
     private final JwtTokenUtil jwtTokenUtil;
     private final AuthenticationManager authenticationManager;
     private final UserDetailsServiceImpl userDetailsService;
-    private final UserRepository userRepository;
 
     public Map<String, String> login(AuthRequest request) {
         Authentication authentication = authenticationManager.authenticate(
@@ -57,13 +52,5 @@ public class AuthService {
             return Map.of("token", accessToken, "refreshToken", refreshToken);
         }
         return Collections.emptyMap();
-    }
-
-    public void logout() {
-        var auth = SecurityContextHolder.getContext().getAuthentication();
-        User currentUser = (User) auth.getPrincipal();
-
-        currentUser.setDevice(null);
-        userRepository.save(currentUser);
     }
 }

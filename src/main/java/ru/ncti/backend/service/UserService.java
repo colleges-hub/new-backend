@@ -1,11 +1,8 @@
 package ru.ncti.backend.service;
 
-import io.minio.MinioClient;
-import io.minio.PutObjectArgs;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -13,31 +10,23 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
 import ru.ncti.backend.api.request.AuthRequest;
-import ru.ncti.backend.api.request.FCMRequest;
 import ru.ncti.backend.api.request.ScheduleChangeRequest;
 import ru.ncti.backend.api.response.GroupResponse;
 import ru.ncti.backend.api.response.ScheduleResponse;
 import ru.ncti.backend.api.response.UserResponse;
-import ru.ncti.backend.model.FCM;
 import ru.ncti.backend.model.Group;
-import ru.ncti.backend.model.PrivateChat;
 import ru.ncti.backend.model.Role;
 import ru.ncti.backend.model.Sample;
 import ru.ncti.backend.model.Schedule;
 import ru.ncti.backend.model.Subject;
 import ru.ncti.backend.model.User;
-import ru.ncti.backend.repository.FCMRepository;
 import ru.ncti.backend.repository.GroupRepository;
-import ru.ncti.backend.repository.PrivateChatRepository;
 import ru.ncti.backend.repository.SampleRepository;
 import ru.ncti.backend.repository.ScheduleRepository;
 import ru.ncti.backend.repository.SubjectRepository;
 import ru.ncti.backend.repository.UserRepository;
 
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
@@ -56,36 +45,22 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static java.lang.String.format;
 import static ru.ncti.backend.config.RabbitConfig.UPDATE_CLASSROOM;
 
-/**
- * user: ichuvilin
- */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class UserService {
-
-    @Value("${minio.url}")
-    private String host;
-
-    @Value("${minio.bucket-name}")
-    private String bucketName;
-
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final GroupRepository groupRepository;
     private final SampleRepository sampleRepository;
     private final ScheduleRepository scheduleRepository;
-    private final PrivateChatRepository privateChatRepository;
     private final SubjectRepository subjectRepository;
     private final RabbitTemplate rabbitTemplate;
-    private final FCMRepository fcmRepository;
-    private final MinioClient minioClient;
 
     public Map<String, Set<ScheduleResponse>> getSchedule() {
         var auth = SecurityContextHolder.getContext().getAuthentication();
@@ -220,15 +195,8 @@ public class UserService {
     }
 
     public UserResponse getUserById(Long id) {
-        var auth = SecurityContextHolder.getContext().getAuthentication();
-        User currentUser = (User) auth.getPrincipal();
-
         User candidate = userRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
-
-        PrivateChat privateChat = privateChatRepository.findByUser1AndUser2OrUser1AndUser2(currentUser, candidate, candidate, currentUser);
-
-        String photo = candidate.getPhoto() != null ? String.format("http://%s:9000/%s/%s", host, bucketName, currentUser.getPhoto()) : null;
 
         return UserResponse.builder()
                 .id(candidate.getId())
@@ -237,8 +205,6 @@ public class UserService {
                 .surname(candidate.getSurname())
                 .email(candidate.getUsername())
                 .role(candidate.getRoles())
-                .chat(privateChat != null ? privateChat.getId().toString() : null)
-                .photo(photo)
                 .build();
     }
 
@@ -266,53 +232,11 @@ public class UserService {
                         .surname(user.getSurname())
                         .email(user.getEmail())
                         .role(user.getRoles())
-                        .photo(user.getPhoto())
                         .build());
             }
         });
 
         return users;
-    }
-
-    @Transactional(readOnly = false)
-    public String addFCMToken(FCMRequest dto) {
-        var auth = SecurityContextHolder.getContext().getAuthentication();
-        User user = (User) auth.getPrincipal();
-
-        FCM fcm = new FCM();
-        fcm.setToken(dto.getToken());
-        fcm.setDevice(dto.getDevice());
-        fcm.setUser(user);
-
-        fcmRepository.save(fcm);
-
-        return "Token was added";
-    }
-
-    public String updateUserPhoto(MultipartFile file) {
-        try (InputStream in = new ByteArrayInputStream(file.getBytes())) {
-            var auth = SecurityContextHolder.getContext().getAuthentication();
-            User user = (User) auth.getPrincipal();
-
-            String fileName = UUID.randomUUID().toString();
-            String fileExtend = Objects.requireNonNull(file.getOriginalFilename()).substring(file.getOriginalFilename().length() - 3);
-
-            String fileFullName = format("%s.%s", fileName, fileExtend);
-
-            minioClient.putObject(PutObjectArgs.builder()
-                    .bucket(bucketName)
-                    .object(fileFullName)
-                    .stream(in, file.getSize(), -1)
-                    .build());
-
-            user.setPhoto(fileFullName);
-            userRepository.save(user);
-
-            return "File uploaded.";
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return "Something wrong.";
     }
 
     private Map<String, Set<ScheduleResponse>> getScheduleFromTeacher(User user) {
@@ -334,8 +258,8 @@ public class UserService {
                     .stream()
                     .filter(scheduleDTO ->
                             scheduleDTO.getNumberPair().equals(dto.getNumberPair()) &&
-                                    scheduleDTO.getSubject().equals(dto.getSubject()) &&
-                                    scheduleDTO.getClassroom().equals(dto.getClassroom())
+                            scheduleDTO.getSubject().equals(dto.getSubject()) &&
+                            scheduleDTO.getClassroom().equals(dto.getClassroom())
                     )
                     .findFirst();
 

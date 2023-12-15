@@ -5,9 +5,6 @@ import lombok.Setter;
 
 import java.util.List;
 
-/**
- * user: ichuvilin
- */
 @Getter
 @Setter
 public class UserRequest {

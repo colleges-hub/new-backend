@@ -14,9 +14,6 @@ import java.util.Map;
 
 import static org.springframework.http.HttpStatus.OK;
 
-/**
- * user: ichuvilin
- */
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/auth")
@@ -27,11 +24,6 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<Map<String, String>> login(@RequestBody AuthRequest request) {
         return ResponseEntity.status(OK).body(authService.login(request));
-    }
-
-    @PostMapping("/logout")
-    public void logout() {
-        authService.logout();
     }
 
     @PostMapping("/refresh")

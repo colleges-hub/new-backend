@@ -33,9 +33,6 @@ import ru.ncti.backend.service.AdminService;
 import java.io.IOException;
 import java.util.List;
 
-/**
- * user: ichuvilin
- */
 @RestController
 @RequestMapping("/admin")
 @RequiredArgsConstructor

@@ -13,9 +13,6 @@ import javax.persistence.ManyToMany;
 import javax.persistence.Table;
 import java.util.Set;
 
-/**
- * user: ichuvilin
- */
 @Getter
 @Setter
 @Entity

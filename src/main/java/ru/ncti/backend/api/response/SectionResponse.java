@@ -4,9 +4,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
-/**
- * user: ichuvilin
- */
+
 @Getter
 @Setter
 @Builder

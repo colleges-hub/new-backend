@@ -9,9 +9,6 @@ import ru.ncti.backend.model.Role;
 
 import java.util.Set;
 
-/**
- * user: ichuvilin
- */
 @Getter
 @Setter
 @Builder
@@ -22,8 +19,6 @@ public class UserResponse {
     private String firstname;
     private String lastname;
     private String surname;
-    private String photo;
     private String email;
     private Set<Role> role;
-    private String chat;
 }

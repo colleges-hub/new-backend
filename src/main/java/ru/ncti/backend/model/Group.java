@@ -15,9 +15,6 @@ import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import java.util.Set;
 
-/**
- * user: ichuvilin
- */
 @Getter
 @Setter
 @Entity

@@ -6,9 +6,7 @@ import lombok.Setter;
 
 import java.util.Map;
 
-/**
- * user: ichuvilin
- */
+
 @Getter
 @Setter
 @Builder
