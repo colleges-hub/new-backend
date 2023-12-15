@@ -1,0 +1,43 @@
+plugins {
+    id("java")
+    id("org.springframework.boot") version "2.7.11"
+    id("io.spring.dependency-management") version "1.1.0"
+    id("io.freefair.lombok") version "8.4"
+}
+
+group = "ru.collegehub"
+version = "0.0.1-SNAPSHOT"
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation("org.springframework.boot:spring-boot-starter-amqp")
+    implementation("org.springframework.boot:spring-boot-starter-data-jpa")
+    implementation("org.springframework.boot:spring-boot-starter-web")
+    implementation("org.springframework.boot:spring-boot-starter-security")
+    implementation("org.springframework.boot:spring-boot-starter-websocket")
+    implementation("org.springframework.boot:spring-boot-devtools")
+    implementation("org.springframework.boot:spring-boot-starter-data-redis")
+    implementation("org.springframework.boot:spring-boot-starter-actuator")
+    implementation("net.logstash.logback:logstash-logback-encoder:7.2")
+    implementation("io.jsonwebtoken:jjwt:0.9.1")
+    implementation("org.modelmapper:modelmapper:3.1.1")
+    implementation("commons-fileupload:commons-fileupload:1.5")
+    implementation("com.opencsv:opencsv:5.7.1")
+    implementation("com.google.firebase:firebase-admin:9.1.1")
+    implementation("org.flywaydb:flyway-core:9.17.0")
+    implementation("io.minio:minio:8.5.4")
+    runtimeOnly("org.postgresql:postgresql:42.5.4")
+    testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation("org.springframework.security:spring-security-test")
+}
+
+tasks.withType<Test> {
+    useJUnitPlatform()
+}
