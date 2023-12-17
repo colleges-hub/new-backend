@@ -34,9 +34,8 @@ spring:
               type:
                 headers: false
   liquibase:
-    change-log: db/changelog/main-changelog.xml
-
+    change-log: db/changelog/test-changelog.xml
 jwt:
-  secret: ${SECRET}
+  secret: 1111
   expiration: 604800000
   refresh_expiration: 1209600000

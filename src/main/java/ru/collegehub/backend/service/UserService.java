@@ -64,9 +64,9 @@ public class UserService {
         User user = (User) auth.getPrincipal();
 
         for (Role role : user.getRoles()) {
-            if (role.getDescription().equals("Студент"))
+            if (role.getName().equals("ROLE_STUDENT"))
                 return getSchedule(user.getGroup().getId());
-            else if (role.getDescription().equals("Преподаватель")) {
+            else if (role.getName().equals("ROLE_TEACHER")) {
                 return getScheduleFromTeacher(user);
             }
         }

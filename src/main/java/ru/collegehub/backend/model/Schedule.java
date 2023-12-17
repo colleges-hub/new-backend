@@ -20,7 +20,7 @@ import java.time.LocalDate;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-@Table(name = "raspisanie")
+@Table(name = "schedule")
 @Entity
 public class Schedule {
 
@@ -32,19 +32,19 @@ public class Schedule {
     private LocalDate date;
 
     @ManyToOne
-    @JoinColumn(name = "id_group")
+    @JoinColumn(name = "group")
     private Group group;
 
     @JsonIgnore
     @ManyToOne
-    @JoinColumn(name = "subject_id")
+    @JoinColumn(name = "subject")
     private Subject subject;
 
     @Column(name = "pair")
     private Integer numberPair;
 
     @ManyToOne
-    @JoinColumn(name = "teacher_id")
+    @JoinColumn(name = "teacher")
     private User teacher;
 
     @Column(name = "classroom")

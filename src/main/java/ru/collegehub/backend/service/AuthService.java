@@ -5,8 +5,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import ru.collegehub.backend.api.request.AuthRequest;
 import ru.collegehub.backend.model.User;
@@ -26,10 +24,8 @@ public class AuthService {
     private final UserDetailsServiceImpl userDetailsService;
 
     public Map<String, String> login(AuthRequest request) {
-        Authentication authentication = authenticationManager.authenticate(
+        authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword()));
-
-        SecurityContextHolder.getContext().setAuthentication(authentication);
 
         User userDetails = (User) userDetailsService.loadUserByUsername(request.getUsername());
 

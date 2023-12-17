@@ -1,5 +1,6 @@
 package ru.collegehub.backend.api.request;
 
+import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -12,6 +13,8 @@ import lombok.Setter;
 @AllArgsConstructor
 @NoArgsConstructor
 public class AuthRequest {
+    @NotBlank
     private String username;
+    @NotBlank
     private String password;
 }

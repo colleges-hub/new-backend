@@ -20,7 +20,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-@Table(name = "shablon")
+@Table(name = "template")
 @Entity
 public class Template {
     @Id
@@ -29,7 +29,7 @@ public class Template {
 
     @JsonIgnore
     @ManyToOne
-    @JoinColumn(name = "id_group")
+    @JoinColumn(name = "group")
     private Group group;
 
     @Column(name = "day")
@@ -39,14 +39,14 @@ public class Template {
     private String parity;
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "subject_id")
+    @JoinColumn(name = "subject")
     private Subject subject;
 
-    @Column(name = "subject_number")
+    @Column(name = "pair")
     private Integer numberPair;
 
     @ManyToOne
-    @JoinColumn(name = "teacher_id")
+    @JoinColumn(name = "teacher")
     private User teacher;
 
     @Column(name = "classroom")

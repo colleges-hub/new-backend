@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.25.xsd">
+
+    <changeSet id="v1-1" author="Ivan Chuvilin">
+        <createTable tableName="role">
+            <column name="id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true"/>
+            </column>
+            <column name="name" type="varchar(15)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="description" type="varchar(255)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="v1-2" author="Ivan Chuvilin">
+        <createTable tableName="speciality">
+            <column name="id" type="varchar(10)">
+                <constraints primaryKey="true"/>
+            </column>
+            <column name="name" type="varchar(150)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="v1-3" author="Ivan Chuvilin">
+        <createTable tableName="groups">
+            <column name="id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true"/>
+            </column>
+            <column name="course" type="int"/>
+            <column name="name" type="varchar(10)"/>
+            <column name="speciality" type="varchar(10)">
+                <constraints foreignKeyName="fk_group_speciality" referencedTableName="speciality"
+                             referencedColumnNames="id"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="v1-4" author="Ivan Chuvilin">
+        <createTable tableName="users">
+            <column name="id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true"/>
+            </column>
+            <column name="firstname" type="varchar(50)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="lastname" type="varchar(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="surname" type="varchar(100)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="email" type="varchar(100)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="password" type="varchar(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="group" type="bigint">
+                <constraints foreignKeyName="fk_user_group" referencedTableName="groups" referencedColumnNames="id"/>
+            </column>
+            <column name="is_account_non_locked" type="boolean"/>
+            <column name="is_account_non_expired" type="boolean"/>
+            <column name="is_credentials_non_expired" type="boolean"/>
+            <column name="is_enabled" type="boolean"/>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="v1-5" author="Ivan Chuvilin">
+        <createTable tableName="user_role">
+            <column name="user_id" type="bigint">
+                <constraints foreignKeyName="fk_user_role_user_id" referencedTableName="users"
+                             referencedColumnNames="id"/>
+            </column>
+            <column name="role_id" type="bigint">
+                <constraints foreignKeyName="fk_user_role_role_id" referencedTableName="role"
+                             referencedColumnNames="id"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="v1-6" author="Ivan Chuvilin">
+        <createTable tableName="subjects">
+            <column name="id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true"/>
+            </column>
+            <column name="name" type="varchar(100)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="v1-7" author="Ivan Chuvilin">
+        <createTable tableName="template">
+            <column name="id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true"/>
+            </column>
+            <column name="day" type="varchar(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="group" type="bigint">
+                <constraints nullable="false" foreignKeyName="fk_template_groups" referencedTableName="groups"
+                             referencedColumnNames="id"/>
+            </column>
+            <column name="parity" type="varchar" defaultValue="0"/>
+            <column name="subject" type="bigint">
+                <constraints foreignKeyName="fk_template_subject" referencedTableName="subjects"
+                             referencedColumnNames="id"/>
+            </column>
+            <column name="pair" type="int"/>
+            <column name="teacher" type="bigint">
+                <constraints foreignKeyName="fk_template_users" referencedTableName="users" referencedColumnNames="id"/>
+            </column>
+            <column name="classroom" type="varchar(255)"/>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="v1-8" author="Ivan Chuvilin">
+        <createTable tableName="schedule">
+            <column name="id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true"/>
+            </column>
+            <column name="date" type="date">
+                <constraints nullable="false"/>
+            </column>
+            <column name="group" type="bigint">
+                <constraints nullable="false" foreignKeyName="fk_schedule_groups" referencedTableName="groups"
+                             referencedColumnNames="id"/>
+            </column>
+            <column name="subject" type="bigint">
+                <constraints nullable="false" foreignKeyName="fk_schedule_subjects" referencedTableName="subjects"
+                             referencedColumnNames="id"/>
+            </column>
+            <column name="pair" type="int">
+                <constraints nullable="false"/>
+            </column>
+            <column name="teacher" type="bigint">
+                <constraints nullable="false" foreignKeyName="fk_schedule_users" referencedTableName="users"
+                             referencedColumnNames="id"/>
+            </column>
+            <column name="classroom" type="varchar(255)"/>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="v1-9" author="Ivan Chuvilin">
+        <loadData tableName="role" file="db/data/v1/role-data.csv"/>
+    </changeSet>
+
+    <changeSet id="v1-10" author="Ivan Chuvilin">
+        <loadData tableName="users" file="db/data/v1/users-data.csv"/>
+    </changeSet>
+
+    <changeSet id="v1-11" author="Ivan Chuvilin">
+        <loadData tableName="user_role" file="db/data/v1/add-role-user.csv"/>
+    </changeSet>
+
+</databaseChangeLog>

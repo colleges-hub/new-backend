@@ -126,7 +126,6 @@ public class AdminService {
         return roleRepository.findAll().stream().map(
                 role -> RoleResponse.builder()
                         .id(role.getId())
-                        .name(role.getDescription())
                         .build()
         ).toList();
     }
