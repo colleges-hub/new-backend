@@ -20,6 +20,11 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
+    services:
+      docker:
+        image: docker:latest
+        options: --privileged
+
     steps:
       - uses: actions/checkout@v3
       - name: Set up JDK 17
@@ -29,7 +34,11 @@ jobs:
           distribution: 'temurin'
       - name: Run chmod to make gradlew executable
         run: chmod +x ./gradlew
-      - name: Build with Gradle
+      - name: Start Docker service
+        run: |
+          sudo service docker start
+          sleep 10
+      - name: Startup tests
         uses: gradle/gradle-build-action@67421db6bd0bf253fb4bd25b31ebb98943c375e1
         with:
-          arguments: build -x test --no-daemon
+          arguments: test
