@@ -4,6 +4,7 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 import ru.collegehub.backend.model.User;
 
@@ -26,9 +27,8 @@ public class JwtTokenUtil {
         Map<String, Object> claims = new HashMap<>();
 
         claims.put("user_id", userDetails.getId());
-        claims.put("role", userDetails.getAuthorities());
 
-        String subject = userDetails.getUsername();
+        String subject = userDetails.getEmail();
         return Jwts.builder().setClaims(claims)
                 .setSubject(subject)
                 .setIssuer("backend")
@@ -39,7 +39,7 @@ public class JwtTokenUtil {
 
     public String generateRefreshToken(User userDetails) {
         Map<String, Object> claims = new HashMap<>();
-        String subject = userDetails.getUsername();
+        String subject = userDetails.getEmail();
         return Jwts.builder().setClaims(claims)
                 .setSubject(subject)
                 .setIssuer("backend")
@@ -48,13 +48,13 @@ public class JwtTokenUtil {
                 .signWith(SignatureAlgorithm.HS512, secret).compact();
     }
 
-    public Boolean validateToken(String token, User userDetails) {
-        final String username = getUsernameFromToken(token);
-        String usernameOrEmail = userDetails.getUsername();
-        return (username.equals(usernameOrEmail) && !isTokenExpired(token));
+    public Boolean validateToken(String token, UserDetails userDetails) {
+        final String email = getEmailFromToken(token);
+        String username = userDetails.getUsername();
+        return (username.equals(email) && !isTokenExpired(token));
     }
 
-    public String getUsernameFromToken(String token) {
+    public String getEmailFromToken(String token) {
         return Jwts.parser().setSigningKey(secret).parseClaimsJws(token).getBody().getSubject();
     }
 
@@ -68,9 +68,9 @@ public class JwtTokenUtil {
     }
 
     public boolean validateRefreshToken(String refreshToken, User userDetails) {
-        final String username = getUsernameFromToken(refreshToken);
-        String usernameOrEmail = userDetails.getUsername();
-        return (username.equals(usernameOrEmail) && !isRefreshTokenExpired(refreshToken));
+        final String email = getEmailFromToken(refreshToken);
+        String usernameOrEmail = userDetails.getEmail();
+        return (email.equals(usernameOrEmail) && !isRefreshTokenExpired(refreshToken));
     }
 
     private boolean isRefreshTokenExpired(String refreshToken) {

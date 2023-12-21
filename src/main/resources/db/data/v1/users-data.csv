@@ -1,2 +1,2 @@
-firstname,lastname,email,password,is_account_non_locked,is_account_non_expired,is_credentials_non_expired,is_enabled
-Ivan,Chuvilin,admin@admin.com,$2a$10$xjDYCTaxIzZcr5jap1AU1Oe2VzwjasEH5ISvIBuL9QgYXb3W.Tmai,true,true,true,true
+firstname,lastname,email,password
+Ivan,Chuvilin,admin@admin.com,$2a$10$xjDYCTaxIzZcr5jap1AU1Oe2VzwjasEH5ISvIBuL9QgYXb3W.Tmai

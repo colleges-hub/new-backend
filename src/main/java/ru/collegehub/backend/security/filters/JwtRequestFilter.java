@@ -8,9 +8,9 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
-import ru.collegehub.backend.model.User;
 import ru.collegehub.backend.security.JwtTokenUtil;
 import ru.collegehub.backend.security.UserDetailsServiceImpl;
 
@@ -36,8 +36,8 @@ public class JwtRequestFilter extends OncePerRequestFilter {
             if (jwtToken.isBlank()) {
                 httpServletResponse.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid JWT Token in Bearer Header");
             } else {
-                String username = jwtTokenUtil.getUsernameFromToken(jwtToken);
-                User userDetails = (User) userDetailsService.loadUserByUsername(username);
+                String email = jwtTokenUtil.getEmailFromToken(jwtToken);
+                UserDetails userDetails = userDetailsService.loadUserByUsername(email);
 
                 if (jwtTokenUtil.validateToken(jwtToken, userDetails)) {
 

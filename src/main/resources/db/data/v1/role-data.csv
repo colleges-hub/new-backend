@@ -1,4 +1,4 @@
 name,description
-ROLE_ADMIN, Админ
-ROLE_STUDENT, Студент
-ROLE_TEACHER, Преподаватель
+ADMIN, Администратор
+STUDENT, Студент
+TEACHER, Преподаватель
