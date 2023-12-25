@@ -20,11 +20,6 @@ COPY --from=build ${JAR_FILE} /home/app/app.jar
 # Установка рабочей директории
 WORKDIR /home/app
 
-ENV DB_URL=jdbc:postgresql://195.93.252.56:5432/ncti
-ENV DB_USER=postgres
-ENV DB_PASSWORD=root
-ENV SECRET=dSgVkYp3s6v9y$B&
-
 EXPOSE 8080
 
 # Запуск приложения

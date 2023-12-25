@@ -1,0 +1,8 @@
+.github
+.gradle
+.idea
+build
+gradle
+kafka
+gradlew
+gradlew.bat
