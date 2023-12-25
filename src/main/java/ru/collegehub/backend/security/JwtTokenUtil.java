@@ -4,10 +4,12 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 import ru.collegehub.backend.model.User;
 
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -23,28 +25,26 @@ public class JwtTokenUtil {
     @Value("${jwt.refresh_expiration}")
     private final Long refreshExpirationInMs;
 
-    public String generateToken(User userDetails) {
+    public String generateToken(User userDetails, Collection<? extends GrantedAuthority> authorities) {
+        return getString(userDetails, authorities, jwtExpirationInMs);
+    }
+
+    public String generateRefreshToken(User userDetails, Collection<? extends GrantedAuthority> authorities) {
+        return getString(userDetails, authorities, refreshExpirationInMs);
+    }
+
+    private String getString(User userDetails, Collection<? extends GrantedAuthority> authorities, Long expirationInMs) {
         Map<String, Object> claims = new HashMap<>();
 
         claims.put("user_id", userDetails.getId());
+        claims.put("roles", authorities);
 
         String subject = userDetails.getEmail();
         return Jwts.builder().setClaims(claims)
                 .setSubject(subject)
                 .setIssuer("backend")
                 .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + jwtExpirationInMs))
-                .signWith(SignatureAlgorithm.HS512, secret).compact();
-    }
-
-    public String generateRefreshToken(User userDetails) {
-        Map<String, Object> claims = new HashMap<>();
-        String subject = userDetails.getEmail();
-        return Jwts.builder().setClaims(claims)
-                .setSubject(subject)
-                .setIssuer("backend")
-                .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + refreshExpirationInMs))
+                .setExpiration(new Date(System.currentTimeMillis() + expirationInMs))
                 .signWith(SignatureAlgorithm.HS512, secret).compact();
     }
 

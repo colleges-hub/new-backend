@@ -13,6 +13,9 @@ java {
 }
 
 val testcontainersVersion = "1.17.6"
+val postgresVersion = "42.5.4"
+val liquidBaseVersion = "4.25.0"
+val modelMapperVersion = "3.1.1"
 
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
@@ -20,10 +23,10 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.kafka:spring-kafka")
-    implementation("org.liquibase:liquibase-core:4.25.0")
+    implementation("org.liquibase:liquibase-core:${liquidBaseVersion}")
     implementation("io.jsonwebtoken:jjwt:0.9.1")
-    implementation("org.modelmapper:modelmapper:3.1.1")
-    runtimeOnly("org.postgresql:postgresql:42.5.4")
+    implementation("org.modelmapper:modelmapper:${modelMapperVersion}")
+    runtimeOnly("org.postgresql:postgresql:${postgresVersion}")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.springframework.security:spring-security-test")
     testImplementation("org.springframework.boot:spring-boot-testcontainers")
