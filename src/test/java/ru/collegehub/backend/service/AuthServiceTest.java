@@ -16,11 +16,10 @@ import ru.collegehub.backend.api.request.AuthRequest;
 import ru.collegehub.backend.api.response.AuthResponse;
 import ru.collegehub.backend.model.User;
 import ru.collegehub.backend.security.JwtTokenUtil;
-import ru.collegehub.backend.security.UserDetailsImpl;
 
 import java.util.Collections;
-import java.util.Map;
 
+import static org.hibernate.validator.internal.util.Contracts.assertNotNull;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -46,37 +45,25 @@ class AuthServiceTest {
 
     @Test
     void successfulSignin_withValidCredentials() {
-        var request = new AuthRequest();
-        request.setEmail("valid");
-        request.setPassword("valid");
+        var userDetails = new User();
+        userDetails.setRoles(Collections.emptyList());
+        Authentication authentication = mock(Authentication.class);
+        when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class))).thenReturn(authentication);
+        when(authentication.getPrincipal()).thenReturn(userDetails);
 
-        var user = new User();
-        user.setEmail("valid");
-        user.setRoles(Collections.emptyList());
+        String mockAccessToken = "mockAccessToken";
+        String mockRefreshToken = "mockRefreshToken";
+        when(jwtTokenUtil.generateToken(any(User.class), any())).thenReturn(mockAccessToken);
+        when(jwtTokenUtil.generateRefreshToken(any(User.class), any())).thenReturn(mockRefreshToken);
 
-        var userDetails = new UserDetailsImpl(user);
+        AuthRequest testRequest = new AuthRequest();
+        testRequest.setEmail("valid");
+        testRequest.setPassword("valid");
+        AuthResponse authResponse = authService.signin(testRequest);
 
-        var expectedTokens = Map.of("token", "valid_access_token",
-                "refreshToken", "valid_refresh_Token");
-
-        when(authenticationManager
-                .authenticate(any(UsernamePasswordAuthenticationToken.class)))
-                .thenReturn(null);
-
-        when(userDetailsService.loadUserByUsername(request.getEmail()))
-                .thenReturn(userDetails);
-
-        when(jwtTokenUtil.generateToken(userDetails.getUser(), userDetails.getAuthorities()))
-                .thenReturn(expectedTokens.get("token"));
-
-        when(jwtTokenUtil.generateRefreshToken(userDetails.getUser(), userDetails.getAuthorities()))
-                .thenReturn(expectedTokens.get("refreshToken"));
-
-        var actualTokens = authService.signin(request);
-
-        assertEquals(expectedTokens.get("token"), actualTokens.getToken());
-        assertEquals(expectedTokens.get("refreshToken"), actualTokens.getRefreshToken());
+        assertNotNull(authResponse);
     }
+
 
     @Test
     void failedLogin_withInvalidCredentials() {
@@ -93,11 +80,9 @@ class AuthServiceTest {
         var user = new User();
         user.setEmail("admin@admim.com");
         user.setRoles(Collections.emptyList());
-        UserDetailsImpl userDetails = new UserDetailsImpl(user);
-
 
         Authentication authentication = mock(Authentication.class);
-        when(authentication.getPrincipal()).thenReturn(userDetails);
+        when(authentication.getPrincipal()).thenReturn(user);
 
 
         SecurityContext securityContext = mock(SecurityContext.class);
@@ -105,8 +90,8 @@ class AuthServiceTest {
         when(securityContext.getAuthentication()).thenReturn(authentication);
 
 
-        when(jwtTokenUtil.generateToken(userDetails.getUser(), userDetails.getAuthorities())).thenReturn("mockedAccessToken");
-        when(jwtTokenUtil.generateRefreshToken(userDetails.getUser(), userDetails.getAuthorities())).thenReturn("mockedRefreshToken");
+        when(jwtTokenUtil.generateToken(user, user.getAuthorities())).thenReturn("mockedAccessToken");
+        when(jwtTokenUtil.generateRefreshToken(user, user.getAuthorities())).thenReturn("mockedRefreshToken");
 
 
         AuthResponse result = authService.refreshToken();

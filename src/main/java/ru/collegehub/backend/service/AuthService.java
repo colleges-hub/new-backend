@@ -10,8 +10,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.collegehub.backend.api.request.AuthRequest;
 import ru.collegehub.backend.api.response.AuthResponse;
+import ru.collegehub.backend.model.User;
 import ru.collegehub.backend.security.JwtTokenUtil;
-import ru.collegehub.backend.security.UserDetailsImpl;
 
 @Slf4j
 @Service
@@ -24,14 +24,14 @@ public class AuthService {
 
     @Transactional(readOnly = true)
     public AuthResponse signin(AuthRequest request) {
-        authenticationManager.authenticate(
+        var authenticate = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
         );
 
-        var user = (UserDetailsImpl) userDetailsService.loadUserByUsername(request.getEmail());
+        var principal = (User) authenticate.getPrincipal();
 
-        var accessToken = jwtTokenUtil.generateToken(user.getUser(), user.getAuthorities());
-        var refreshToken = jwtTokenUtil.generateRefreshToken(user.getUser(), user.getAuthorities());
+        var accessToken = jwtTokenUtil.generateToken(principal, principal.getAuthorities());
+        var refreshToken = jwtTokenUtil.generateRefreshToken(principal, principal.getAuthorities());
 
         return AuthResponse.builder()
                 .token(accessToken)
@@ -42,10 +42,10 @@ public class AuthService {
 
     public AuthResponse refreshToken() {
         var authentication = SecurityContextHolder.getContext().getAuthentication();
-        var principal = (UserDetailsImpl) authentication.getPrincipal();
+        var principal = (User) authentication.getPrincipal();
 
-        var accessToken = jwtTokenUtil.generateToken(principal.getUser(), principal.getAuthorities());
-        var newRefreshToken = jwtTokenUtil.generateRefreshToken(principal.getUser(), principal.getAuthorities());
+        var accessToken = jwtTokenUtil.generateToken(principal, principal.getAuthorities());
+        var newRefreshToken = jwtTokenUtil.generateRefreshToken(principal, principal.getAuthorities());
 
         return AuthResponse.builder()
                 .token(accessToken)
