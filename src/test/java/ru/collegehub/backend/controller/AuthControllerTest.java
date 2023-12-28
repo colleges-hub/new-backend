@@ -9,9 +9,11 @@ import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import org.testcontainers.containers.KafkaContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.utility.DockerImageName;
 import ru.collegehub.backend.api.request.AuthRequest;
 import ru.collegehub.backend.api.response.AuthResponse;
 
@@ -27,6 +29,10 @@ class AuthControllerTest {
     @Container
     @ServiceConnection
     private static final PostgreSQLContainer<?> container = new PostgreSQLContainer<>("postgres:15-alpine");
+
+    @Container
+    @ServiceConnection
+    private static final KafkaContainer kafka = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka"));
 
     private final TestRestTemplate restTemplate = new TestRestTemplate();
 

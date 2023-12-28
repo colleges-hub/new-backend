@@ -170,11 +170,23 @@
     </changeSet>
 
     <changeSet id="v1-10" author="Ivan Chuvilin">
-        <loadData tableName="users" file="db/data/v1/users-data.csv"/>
+        <loadData tableName="speciality" file="db/data/test/speciality.csv"/>
     </changeSet>
 
     <changeSet id="v1-11" author="Ivan Chuvilin">
-        <loadData tableName="user_role" file="db/data/v1/add-role-user.csv"/>
+        <loadData tableName="groups" file="db/data/test/group.csv"/>
+    </changeSet>
+
+    <changeSet id="v1-12" author="Ivan Chuvilin">
+        <loadData tableName="users" file="db/data/test/users-data.csv"/>
+    </changeSet>
+
+    <changeSet id="v1-13" author="Ivan Chuvilin">
+        <loadData tableName="user_role" file="db/data/test/add-role-user.csv"/>
+    </changeSet>
+
+    <changeSet id="v1-14" author="Ivan Chuvilin">
+        <loadData tableName="student" file="db/data/test/student.csv"/>
     </changeSet>
 
 </databaseChangeLog>
