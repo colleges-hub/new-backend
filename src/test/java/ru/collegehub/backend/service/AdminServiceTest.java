@@ -7,6 +7,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import ru.collegehub.backend.api.request.admin.GroupRequest;
+import ru.collegehub.backend.api.request.admin.ScheduleRequest;
 import ru.collegehub.backend.api.request.admin.SpecialtyRequest;
 import ru.collegehub.backend.api.request.admin.SubjectRequest;
 import ru.collegehub.backend.api.request.admin.UserRequest;
@@ -21,10 +22,12 @@ import ru.collegehub.backend.model.Group;
 import ru.collegehub.backend.model.Role;
 import ru.collegehub.backend.model.Speciality;
 import ru.collegehub.backend.model.Student;
+import ru.collegehub.backend.model.Subject;
 import ru.collegehub.backend.model.User;
 import ru.collegehub.backend.model.UserRole;
 import ru.collegehub.backend.repository.GroupRepository;
 import ru.collegehub.backend.repository.RoleRepository;
+import ru.collegehub.backend.repository.ScheduleRepository;
 import ru.collegehub.backend.repository.SpecialityRepository;
 import ru.collegehub.backend.repository.StudentRepository;
 import ru.collegehub.backend.repository.SubjectRepository;
@@ -64,6 +67,9 @@ class AdminServiceTest {
     private RoleRepository roleRepository;
     @Mock
     private PasswordGenerator passwordGenerator;
+
+    @Mock
+    private ScheduleRepository scheduleRepository;
 
     @InjectMocks
     private AdminService adminService;
@@ -258,6 +264,26 @@ class AdminServiceTest {
 
         assertEquals(id, result.getId());
         assertEquals("Speciality Name", result.getName());
+    }
+
+    @Test
+    void test_createSchedule_validInputs() {
+        ScheduleRequest request = new ScheduleRequest();
+        request.setDayOfWeek("01.01.2022");
+        request.setGroup(1L);
+        request.setTeacher(1L);
+        request.setSubject(1L);
+        request.setNumberPair(1);
+        request.setClassroom("A101");
+
+        when(groupRepository.findById(1L)).thenReturn(Optional.of(new Group()));
+        when(userRepository.findById(1L)).thenReturn(Optional.of(new User()));
+        when(subjectRepository.findById(1L)).thenReturn(Optional.of(new Subject()));
+
+        MessageResponse response = adminService.createSchedule(request);
+
+        assertNotNull(response);
+        assertEquals("Schedule was added", response.getMessage());
     }
 
 }

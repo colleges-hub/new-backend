@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import ru.collegehub.backend.api.request.admin.GroupRequest;
+import ru.collegehub.backend.api.request.admin.ScheduleRequest;
 import ru.collegehub.backend.api.request.admin.SpecialtyRequest;
 import ru.collegehub.backend.api.request.admin.SubjectRequest;
 import ru.collegehub.backend.api.request.admin.UserRequest;
@@ -52,6 +53,11 @@ public class AdminController {
     @PostMapping("/create-subject")
     public ResponseEntity<MessageResponse> createSubject(@Valid @RequestBody SubjectRequest request) {
         return ResponseEntity.ok().body(adminService.createSubject(request));
+    }
+
+    @PostMapping("/create-schedule")
+    public ResponseEntity<MessageResponse> addSchedule(@Valid @RequestBody ScheduleRequest request) {
+        return ResponseEntity.ok().body(adminService.createSchedule(request));
     }
 
     @GetMapping("/users")

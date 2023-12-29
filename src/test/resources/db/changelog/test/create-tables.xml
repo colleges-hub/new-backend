@@ -189,4 +189,8 @@
         <loadData tableName="student" file="db/data/test/student.csv"/>
     </changeSet>
 
+    <changeSet id="v1-15" author="Ivan Chuvilin">
+        <loadData tableName="subject" file="db/data/test/subject.csv"/>
+    </changeSet>
+
 </databaseChangeLog>

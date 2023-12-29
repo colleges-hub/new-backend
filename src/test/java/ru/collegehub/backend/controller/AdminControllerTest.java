@@ -145,6 +145,26 @@ class AdminControllerTest {
     }
 
     @Test
+    void successfulAddSchedule_withValidValue() throws Exception {
+        mockMvc
+                .perform(post("/admin/create-schedule")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                    "dayOfWeek": "15.01.2024",
+                                    "group": 1,
+                                    "teacher": 1,
+                                    "numberPair": 1,
+                                    "subject": 1,
+                                    "classroom": "Кабинет 200"
+                                }
+                                """)
+                ).andExpectAll(status().isOk(),
+                        jsonPath("$.message").value("Schedule was added")
+                );
+    }
+
+    @Test
     void getUsers() throws Exception {
         mockMvc
                 .perform(get("/admin/users")).andExpectAll(
@@ -313,6 +333,28 @@ class AdminControllerTest {
                 .andExpectAll(
                         status().isBadRequest(),
                         jsonPath("$.message").value("Speciality invalid_spec not found")
+                );
+    }
+
+    @Test
+    void failedAddSchedule_withInvalidData() throws Exception {
+        mockMvc
+                .perform(post("/admin/create-schedule")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                    "dayOfWeek": "",
+                                    "group": null,
+                                    "teacher": null,
+                                    "numberPair": 1,
+                                    "subject": 1,
+                                    "classroom": "Кабинет 200"
+                                }
+                                """)
+                ).andExpectAll(status().isBadRequest(),
+                        jsonPath("$.dayOfWeek").isNotEmpty(),
+                        jsonPath("$.group").isNotEmpty(),
+                        jsonPath("$.teacher").isNotEmpty()
                 );
     }
 

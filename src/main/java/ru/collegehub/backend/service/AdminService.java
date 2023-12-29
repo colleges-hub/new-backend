@@ -9,6 +9,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.collegehub.backend.api.request.admin.GroupRequest;
+import ru.collegehub.backend.api.request.admin.ScheduleRequest;
 import ru.collegehub.backend.api.request.admin.SpecialtyRequest;
 import ru.collegehub.backend.api.request.admin.SubjectRequest;
 import ru.collegehub.backend.api.request.admin.UserRequest;
@@ -22,9 +23,11 @@ import ru.collegehub.backend.dto.StudentDTO;
 import ru.collegehub.backend.exception.GroupNotFoundException;
 import ru.collegehub.backend.exception.RoleNotFoundException;
 import ru.collegehub.backend.exception.SpecialityNotFoundException;
+import ru.collegehub.backend.exception.SubjectNotFoundException;
 import ru.collegehub.backend.exception.UserNotFoundException;
 import ru.collegehub.backend.model.Group;
 import ru.collegehub.backend.model.Role;
+import ru.collegehub.backend.model.Schedule;
 import ru.collegehub.backend.model.Speciality;
 import ru.collegehub.backend.model.Student;
 import ru.collegehub.backend.model.Subject;
@@ -32,6 +35,7 @@ import ru.collegehub.backend.model.User;
 import ru.collegehub.backend.model.UserRole;
 import ru.collegehub.backend.repository.GroupRepository;
 import ru.collegehub.backend.repository.RoleRepository;
+import ru.collegehub.backend.repository.ScheduleRepository;
 import ru.collegehub.backend.repository.SpecialityRepository;
 import ru.collegehub.backend.repository.StudentRepository;
 import ru.collegehub.backend.repository.SubjectRepository;
@@ -39,6 +43,8 @@ import ru.collegehub.backend.repository.UserRepository;
 import ru.collegehub.backend.repository.UserRoleRepository;
 import ru.collegehub.backend.util.PasswordGenerator;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -47,6 +53,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @Service
 @RequiredArgsConstructor
 public class AdminService {
+    private final ScheduleRepository scheduleRepository;
 
     private final PasswordEncoder passwordEncoder;
     private final UserRoleRepository userRoleRepository;
@@ -259,5 +266,32 @@ public class AdminService {
         );
 
         return new SpecialityResponse(speciality.getId(), speciality.getName());
+    }
+
+    @Transactional
+    public MessageResponse createSchedule(ScheduleRequest request) {
+        LocalDate dayOfWeek = LocalDate.parse(request.getDayOfWeek(),
+                DateTimeFormatter.ofPattern("dd.MM.yyyy"));
+
+        var group = groupRepository.findById(request.getGroup())
+                .orElseThrow(
+                        () -> new GroupNotFoundException("Group " + request.getGroup() + " not found")
+                );
+
+        var teacher = userRepository.findById(request.getTeacher())
+                .orElseThrow(
+                        () -> new UserNotFoundException("Teacher " + request.getTeacher() + " not found")
+                );
+
+        var subject = subjectRepository.findById(request.getSubject())
+                .orElseThrow(
+                        () -> new SubjectNotFoundException("Subject " + request.getSubject() + " not found")
+                );
+
+        var schedule = new Schedule(null, dayOfWeek, group, teacher, request.getNumberPair(), subject, request.getClassroom());
+
+        scheduleRepository.save(schedule);
+
+        return new MessageResponse("Schedule was added");
     }
 }
