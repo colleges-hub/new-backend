@@ -16,7 +16,9 @@ docker build .
 ```
 
 - run docker images. Use next env variable
-    - DB_URL* - url for connect to DB
+    - DB_HOST* - db host
+    - DB_PORT* - db port
+    - DB_BASE* - db base
     - DB_USER* - user for connect to DB
     - DB_PASSWORD* - user password for connect to DB
     - SECRET* - secret key for jwt token
