@@ -7,11 +7,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import ru.collegehub.backend.api.response.admin.MessageResponse;
-import ru.collegehub.backend.exception.GroupNotFoundException;
-import ru.collegehub.backend.exception.RoleNotFoundException;
-import ru.collegehub.backend.exception.SpecialityNotFoundException;
-import ru.collegehub.backend.exception.SubjectNotFoundException;
-import ru.collegehub.backend.exception.UserNotFoundException;
+import ru.collegehub.backend.exception.*;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -57,6 +53,11 @@ public class ExceptionController {
 
     @ExceptionHandler(SubjectNotFoundException.class)
     public ResponseEntity<MessageResponse> subjectNotFound(SubjectNotFoundException e) {
+        return ResponseEntity.badRequest().body(new MessageResponse(e.getMessage()));
+    }
+
+    @ExceptionHandler(StudentNotFoundException.class)
+    public ResponseEntity<MessageResponse> studentNotFound(StudentNotFoundException e) {
         return ResponseEntity.badRequest().body(new MessageResponse(e.getMessage()));
     }
 }
