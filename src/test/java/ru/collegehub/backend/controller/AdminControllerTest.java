@@ -169,7 +169,7 @@ class AdminControllerTest {
         mockMvc
                 .perform(get("/admin/users")).andExpectAll(
                         status().isOk(),
-                        jsonPath("$", hasSize(2))
+                        jsonPath("$", hasSize(3))
                 );
     }
 

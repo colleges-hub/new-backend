@@ -193,4 +193,8 @@
         <loadData tableName="subject" file="db/data/test/subject.csv"/>
     </changeSet>
 
+    <changeSet id="v1-16" author="Ivan Chuvilin">
+        <sqlFile path="db/data/test/schedule.sql"/>
+    </changeSet>
+
 </databaseChangeLog>

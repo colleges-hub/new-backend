@@ -1,3 +1,4 @@
 firstname,lastname,email,password
 Ivan,Chuvilin,admin@admin.com,$2a$10$xjDYCTaxIzZcr5jap1AU1Oe2VzwjasEH5ISvIBuL9QgYXb3W.Tmai
-Petr,Petrov,petr@yandex.ru,2a$10$xjDYCTaxIzZcr5jap1AU1Oe2VzwjasEH5ISvIBuL9QgYXb3W.Tmai
+Petr,Petrov,petr@yandex.ru,$2a$10$xjDYCTaxIzZcr5jap1AU1Oe2VzwjasEH5ISvIBuL9QgYXb3W.Tmai
+Anna,Vasilievna,vasilievna@gmail.com,$2a$10$xjDYCTaxIzZcr5jap1AU1Oe2VzwjasEH5ISvIBuL9QgYXb3W.Tmai
