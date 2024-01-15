@@ -19,12 +19,13 @@ import org.testcontainers.utility.DockerImageName;
 import ru.collegehub.backend.api.request.AuthRequest;
 import ru.collegehub.backend.api.request.UserPatchRequest;
 import ru.collegehub.backend.api.response.AuthResponse;
+import ru.collegehub.backend.repository.ScheduleRepository;
 import ru.collegehub.backend.repository.UserRepository;
 
 import java.time.LocalDate;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -50,6 +51,9 @@ class UserControllerTest {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private ScheduleRepository scheduleRepository;
 
     @Autowired
     private MockMvc mockMvc;
@@ -179,6 +183,73 @@ class UserControllerTest {
         }
         mockMvc.perform(get("/user/schedule?id=0").header("Authorization", "Bearer " + response.getBody().getToken()))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void updateClassroom_ShouldReturnOk() throws Exception {
+        var request = new AuthRequest();
+
+        request.setEmail("vasilievna@gmail.com");
+        request.setPassword("admin");
+
+        var response = restTemplate.postForEntity("http://localhost:" + port + "/auth/signin", request, AuthResponse.class);
+
+        if (response.getBody() == null) {
+            throw new Exception("Response body is null");
+        }
+
+        mockMvc.perform(patch("/user/update-classroom")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {
+                            "id": 1,
+                            "classroom": "101"
+                        }
+                        """)
+                .header("Authorization", "Bearer " + response.getBody().getToken())
+        ).andExpectAll(
+                status().isOk(),
+                jsonPath("$.message").value("Classroom was updated on 101")
+        );
+
+        var schedule = scheduleRepository.findById(1L).orElseThrow(
+                Exception::new
+        );
+
+        assertEquals(schedule.getClassroom(), "101");
+    }
+
+    @Test
+    void updateClassroom_ShouldReturnForbidden() throws Exception {
+        var request = new AuthRequest();
+
+        request.setEmail("petr@yandex.ru");
+        request.setPassword("admin");
+
+        var response = restTemplate.postForEntity("http://localhost:" + port + "/auth/signin", request, AuthResponse.class);
+
+        if (response.getBody() == null) {
+            throw new Exception("Response body is null");
+        }
+
+        mockMvc.perform(patch("/user/update-classroom")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {
+                            "id": 1,
+                            "classroom": "B101"
+                        }
+                        """)
+                .header("Authorization", "Bearer " + response.getBody().getToken())
+        ).andExpectAll(
+                status().isForbidden()
+        );
+
+        var schedule = scheduleRepository.findById(1L).orElseThrow(
+                Exception::new
+        );
+
+        assertEquals("101", schedule.getClassroom());
     }
 
     private String asJsonString(Object object) throws JsonProcessingException {

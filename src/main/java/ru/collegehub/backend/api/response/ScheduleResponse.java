@@ -8,6 +8,7 @@ import java.util.List;
 @Getter
 @Builder
 public class ScheduleResponse {
+    private Long id;
     private Integer numberPair;
     private String subject;
     private String classroom;

@@ -8,6 +8,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
+import ru.collegehub.backend.api.request.ClassroomRequest;
 import ru.collegehub.backend.api.request.UserPatchRequest;
 import ru.collegehub.backend.api.response.ScheduleResponse;
 import ru.collegehub.backend.api.response.admin.MessageResponse;
@@ -34,6 +35,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
@@ -182,6 +184,34 @@ class UserServiceTest {
         Map<String, List<ScheduleResponse>> result = userService.getSchedule(null);
 
         assertFalse(result.isEmpty());
+    }
+
+    @Test
+    void testChangeClassroom() {
+        // Arrange
+        Long scheduleId = 1L;
+        String newClassroom = "NewClassroom";
+
+        ClassroomRequest request = new ClassroomRequest();
+        request.setId(scheduleId);
+        request.setClassroom(newClassroom);
+
+        Schedule existingSchedule = new Schedule();
+        existingSchedule.setId(scheduleId);
+        existingSchedule.setClassroom("OldClassroom");
+
+        when(scheduleRepository.findById(scheduleId)).thenReturn(Optional.of(existingSchedule));
+        when(scheduleRepository.save(any(Schedule.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // Act
+        MessageResponse response = userService.changeClassroom(request);
+
+        // Assert
+        verify(scheduleRepository, times(1)).findById(scheduleId);
+        verify(scheduleRepository, times(1)).save(any(Schedule.class));
+
+        assertEquals("Classroom was updated on " + newClassroom, response.getMessage());
+        assertEquals(newClassroom, existingSchedule.getClassroom());
     }
 
     private User createUser() {

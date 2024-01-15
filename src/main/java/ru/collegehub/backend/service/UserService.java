@@ -9,6 +9,7 @@ import org.springframework.beans.BeanWrapperImpl;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.collegehub.backend.api.request.ClassroomRequest;
 import ru.collegehub.backend.api.request.UserPatchRequest;
 import ru.collegehub.backend.api.response.ScheduleResponse;
 import ru.collegehub.backend.api.response.UserProfileResponse;
@@ -86,6 +87,21 @@ public class UserService {
         return map;
     }
 
+
+    // todo: add notification
+    @Transactional
+    public MessageResponse changeClassroom(ClassroomRequest request) {
+        var schedule = scheduleRepository.findById(request.getId())
+                .orElseThrow(
+                        () -> new RuntimeException("Schedule not found")
+                );
+
+        schedule.setClassroom(request.getClassroom());
+        scheduleRepository.save(schedule);
+
+        return new MessageResponse("Classroom was updated on " + request.getClassroom());
+    }
+
     private String[] getNullPropertyNames(Object source) {
         final BeanWrapper src = new BeanWrapperImpl(source);
         java.beans.PropertyDescriptor[] pds = src.getPropertyDescriptors();
@@ -134,14 +150,15 @@ public class UserService {
     }
 
     private void addToScheduleMap(List<Schedule> scheduleList, Map<String, List<ScheduleResponse>> map, boolean isTeacher) {
-        scheduleList.forEach(schedule -> {
-            map.computeIfAbsent(schedule.getDayOfWeek().toString(), list -> new ArrayList<>(5))
-                    .add(createScheduleResponse(schedule, isTeacher));
-        });
+        scheduleList.forEach(schedule ->
+                map.computeIfAbsent(schedule.getDayOfWeek().toString(), list -> new ArrayList<>(5))
+                        .add(createScheduleResponse(schedule, isTeacher))
+        );
     }
 
     private ScheduleResponse createScheduleResponse(Schedule schedule, boolean isTeacher) {
         ScheduleResponse.ScheduleResponseBuilder builder = ScheduleResponse.builder()
+                .id(schedule.getId())
                 .numberPair(schedule.getNumberPair())
                 .subject(schedule.getSubject().getName())
                 .classroom(schedule.getClassroom());
