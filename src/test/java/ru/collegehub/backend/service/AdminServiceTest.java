@@ -27,12 +27,10 @@ import ru.collegehub.backend.model.User;
 import ru.collegehub.backend.model.UserRole;
 import ru.collegehub.backend.repository.GroupRepository;
 import ru.collegehub.backend.repository.RoleRepository;
-import ru.collegehub.backend.repository.ScheduleRepository;
 import ru.collegehub.backend.repository.SpecialityRepository;
 import ru.collegehub.backend.repository.StudentRepository;
 import ru.collegehub.backend.repository.SubjectRepository;
 import ru.collegehub.backend.repository.UserRepository;
-import ru.collegehub.backend.repository.UserRoleRepository;
 import ru.collegehub.backend.util.PasswordGenerator;
 
 import java.util.ArrayList;
@@ -52,8 +50,6 @@ class AdminServiceTest {
     @Mock
     private PasswordEncoder passwordEncoder;
     @Mock
-    private UserRoleRepository userRoleRepository;
-    @Mock
     private UserRepository userRepository;
     @Mock
     private GroupRepository groupRepository;
@@ -65,11 +61,6 @@ class AdminServiceTest {
     private SubjectRepository subjectRepository;
     @Mock
     private RoleRepository roleRepository;
-    @Mock
-    private PasswordGenerator passwordGenerator;
-
-    @Mock
-    private ScheduleRepository scheduleRepository;
 
     @InjectMocks
     private AdminService adminService;
@@ -85,7 +76,7 @@ class AdminServiceTest {
         Role role = new Role();
         role.setName("ADMIN");
 
-        when(passwordGenerator.generate()).thenReturn("1234");
+        when(PasswordGenerator.generate()).thenReturn("1234");
         when(passwordEncoder.encode(anyString())).thenReturn("encodedPassword");
         when(roleRepository.findByNameIgnoreCase(anyString())).thenReturn(Optional.of(role));
 

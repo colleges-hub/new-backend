@@ -64,7 +64,6 @@ public class AdminService {
     private final SubjectRepository subjectRepository;
     private final RoleRepository roleRepository;
     private final KafkaTemplate<String, Object> kafkaTemplate;
-    private final PasswordGenerator passwordGenerator;
 
 
     @Transactional
@@ -76,7 +75,7 @@ public class AdminService {
                 .filter(Optional::isPresent)
                 .map(Optional::get).toList();
 
-        String password = passwordGenerator.generate();
+        String password = PasswordGenerator.generate();
 
         User user = User.builder()
                 .firstname(request.getFirstname())

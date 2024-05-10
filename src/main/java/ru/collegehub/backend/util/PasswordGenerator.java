@@ -1,11 +1,8 @@
 package ru.collegehub.backend.util;
 
-import org.springframework.stereotype.Component;
-
 import java.util.List;
 import java.util.Random;
 
-@Component
 public class PasswordGenerator {
     private static final String LOWER = "abcdefghijklmnopqrstuvwxyz";
     private static final String UPPER = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -13,7 +10,7 @@ public class PasswordGenerator {
     private static final String PUNCTUATION = "!@#$%&*()_+-=[]|,./?><";
     private static final int LENGTH = 20;
 
-    public String generate() {
+    public static String generate() {
         // Variables.
         StringBuilder password = new StringBuilder(LENGTH);
         Random random = new Random(System.nanoTime());
